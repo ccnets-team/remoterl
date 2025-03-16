@@ -112,10 +112,10 @@ class EnvAPI:
         payload = msgpack.unpackb(packed_payload, raw=False)
         return payload
     
-    def send_message(self, action, training_key=None, data=None, message=None, type="info"):
+    def send_message(self, action, remote_training_key=None, data=None, message=None, type="info"):
         payload = {"action": action}
-        if training_key is not None:
-            payload["training_key"] = training_key
+        if remote_training_key is not None:
+            payload["training_key"] = remote_training_key
         if message is not None:
             payload["message"] = message
         if data is not None:

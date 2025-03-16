@@ -42,7 +42,7 @@ class RLLibConfig:
     """RLLibConfig for Remote RL training using Ray RLLib and AWS SageMaker."""
     
     # Environment and Remote Gateway parameters
-    training_key: Optional[str] = None
+    remote_training_key: Optional[str] = None
 
     # Training control
     run_or_experiment: str = "PPO"
