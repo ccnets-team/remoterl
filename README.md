@@ -1,4 +1,4 @@
-# RemoteRL: Remote Env Integrated Cloud RL Training
+# RemoteRL: Seamless Integration of Local Environments with Cloud-Based RL Training
 
 ---
 
