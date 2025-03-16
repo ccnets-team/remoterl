@@ -4,7 +4,7 @@
 
 ## Overview
 
-RemoteRL is a local hosting environment designed for distributed reinforcement learning frameworks such as RLlib. It allows you to run reinforcement learning training jobs in the cloud, while conveniently hosting your environment simulators locally or remotely. By seamlessly connecting local environments to cloud-based training on AWS SageMaker, RemoteRL facilitates efficient data collection, rapid experimentation, and scalable multi-agent reinforcement learning workflows.
+RemoteRL is a local hosting environment designed for distributed reinforcement learning frameworks such as RLlib. It allows you to run reinforcement learning training jobs in the cloud, while conveniently hosting your environment simulators locally. By seamlessly connecting local environments to cloud-based training on AWS SageMaker, RemoteRL facilitates efficient data collection, rapid experimentation, and scalable multi-agent reinforcement learning workflows.
 
 ## Installation
 
@@ -23,14 +23,9 @@ pip install remoterl --upgrade
 
 ### Training & Inference
 
-- **Train a gpt model on AWS:**
+- **Train your RL model on AWS:**
   ```bash
   remoterl train
-  ```
-
-- **Run remote rl on AWS:**
-  ```bash
-  remoterl infer
   ```
 
 ### Configuration
