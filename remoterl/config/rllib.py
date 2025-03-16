@@ -40,21 +40,15 @@ class Exploration:
 @dataclass
 class RLLibConfig:
     """RLLibConfig for Remote RL training using Ray RLLib and AWS SageMaker."""
-
+    
     # Environment and Remote Gateway parameters
-    env: str = "CartPole-v1"
     training_key: Optional[str] = None
-    entry_point: Optional[str] = None
-    env_dir: Optional[str] = None
 
     # Training control
     run_or_experiment: str = "PPO"
     training_iteration: int = 50
     checkpoint_at_end: bool = True
 
-    # Parallelization and Scaling
-    num_workers: int = 1
-    num_envs_per_worker: int = 1
 
     # Core RL Algorithm Parameters
     gamma: float = 0.99
@@ -85,9 +79,17 @@ class RLLibConfig:
         """Sets the exploration configuration in a way compatible with Ray RLLib."""
         self.model["exploration_config"] = exploration.to_dict()
 
+    def set_config(self, **kwargs):
+        for k, v in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                print(f"Warning: No attribute '{k}' in SageMakerConfig")
+
     def to_dict(self) -> Dict[str, Any]:
         """Returns a clean dictionary ready for RLLib."""
         config_dict = asdict(self)
         if "exploration_config" in self.model:
             config_dict["exploration_config"] = self.model.pop("exploration_config")
         return config_dict
+    

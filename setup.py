@@ -30,7 +30,6 @@ setup(
     entry_points={
         "console_scripts": [
             "remoterl=remoterl.cli:app",
-            "remoterl=remoterl.cli_deprecated:main",
         ],
     },
     install_requires=install_requires,
@@ -41,7 +40,7 @@ setup(
     author="JunHo Park",
     author_email="junho@ccnets.org",
     url="https://github.com/ccnets-team/remoterl",
-    description="RemoteRL CLI for training and inference on AWS SageMaker",
+    description="Remote RL for training and inference on AWS SageMaker",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="Dual Licensed (REMOTE RL COMMERCIAL LICENSE or GNU GPLv3)",

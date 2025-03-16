@@ -180,10 +180,10 @@ def wait_for_config_update(sent_remote_training_key, timeout=10):
 def connect_to_remote_rl_server(region: str, env_config: Dict) -> str:
     
     ws = websocket.WebSocket()
-    if region not in ["us-east-1", "us-east-2", "ap-northeast-2"]:
+    if region not in ["us-east-1"]:
         raise ValueError(f"Invalid region: {region}")
     
-    remote_rl_server_url = f"wss://{region}.agent-gpt.ccnets.org"
+    remote_rl_server_url = f"wss://{region}.ccnets.org"
     
     ws.connect(remote_rl_server_url)
     
@@ -204,36 +204,33 @@ def connect_to_remote_rl_server(region: str, env_config: Dict) -> str:
 )
 def simulate(
     env_type: Optional[str] = typer.Option(None, "--env-type", help="Environment type: 'gym' or 'unity'"),
-    env_id: Optional[str] = typer.Option(None, "--env-id", help="Environment ID to simulate, e.g., 'Walker2d-v5'"),
-    num_envs: Optional[int] = typer.Option(None, "--num-envs", help="Number of parallel environments"),
-    num_agents: Optional[int] = typer.Option(None, "--num-agents", help="Number of agents to simulate and train (1-8)"),
+    env: Optional[str] = typer.Option(None, "--env", help="Environment name to simulate, e.g., 'Walker2d-v5'"),
+    num_workers: Optional[int] = typer.Option(None, "--num-workers", help="Number of parallel environments"),
+    num_envs_per_worker: Optional[int] = typer.Option(None, "--num-envs-per-worker", help="Number of envs per worker to simulate and train (1-8)"),
     region: Optional[str] = typer.Option(None, "--region", help="AWS region for simulation/training"),
-    entry_point: Optional[str] = typer.Option(None, "--entry-point", help="Entry point script for the simulation"),
-    env_dir: Optional[str] = typer.Option(None, "--env-dir", help="Directory containing the simulation environment files"),
 ):
+    
     env_type = env_type or typer.prompt("Please provide the environment type ('gym' or 'unity')", default="gym")
-    env_id = env_id or typer.prompt("Please provide the environment ID (e.g., 'Walker2d-v5')", default="Walker2d-v5")
-    num_agents = num_agents or typer.prompt("Please provide the number of agents", type=int, default=256)
-    num_envs = num_envs or typer.prompt("Please provide the number of parallel environments between 1~8", type=int, default=4)
-    region = region or typer.prompt("Please provide the AWS region (Supported regions: 'us-east-1', 'us-east-2', 'ap-northeast-2'. External users may use other regional servers as well.)", default="us-east-1")
+    env = env or typer.prompt("Please provide the environment name (e.g., 'Walker2d-v5')", default="Walker2d-v5")
+    num_envs_per_worker = num_envs_per_worker or typer.prompt("Please provide the number of agents", type=int, default=64)
+    num_workers = num_workers or typer.prompt("Please provide the number of parallel environments between 1~8", type=int, default=4)
+    region = region or typer.prompt("Please specify the AWS region. Currently, our service is built for the 'us-east-1' region; however, external users are welcome to use this server as well.", default="us-east-1")
 
     typer.echo(f"Environment type: {env_type}")
-    typer.echo(f"Environment ID: {env_id}")
-    typer.echo(f"Number of agents: {num_agents}")
-    typer.echo(f"Number of parallel environments: {num_envs}")
+    typer.echo(f"Environment ID: {env}")
+    typer.echo(f"Number of agents: {num_envs_per_worker}")
+    typer.echo(f"Number of parallel environments: {num_workers}")
     typer.echo(f"AWS region: {region}")
-    typer.echo(f"Entry point script: {entry_point}")
-    typer.echo(f"Environment directory: {env_dir}")
     
     configs = load_config()
     configs["sagemaker"]["region"] = region
     save_config(configs)
         
     env_config = {
-        "env_id": env_id,
-        "num_envs": num_envs,
-        "entry_point": entry_point,
-        "env_dir": env_dir,
+        "env_id": env,
+        "num_envs": num_workers,
+        "entry_point": None,
+        "env_dir": None,
     }
 
     remote_rl_server_url, remote_training_key = connect_to_remote_rl_server(region, env_config)
@@ -243,9 +240,9 @@ def simulate(
         "--remote_training_key", remote_training_key,
         "--remote_rl_server_url", remote_rl_server_url,
         "--env_type", env_type,
-        "--env_id", env_id,
-        "--num_agents", str(num_agents),
-        "--num_envs", str(num_envs),
+        "--env_id", env,
+        "--num_agents", str(num_workers * num_envs_per_worker),
+        "--num_envs", str(num_workers),
     ]
 
     # Dynamically add other args from env_config
@@ -272,7 +269,6 @@ def simulate(
 def initialize_sagemaker_access(
     role_arn: str,
     region: str,
-    service_type: str,  # expected to be "trainer" or "inference"
     email: Optional[str] = None
 ):
     """
@@ -301,7 +297,7 @@ def initialize_sagemaker_access(
     payload = {
         "clientAccountId": account_id,
         "region": region,
-        "serviceType": service_type
+        "serviceType": "remoterl"
     }
     if email:
         payload["Email"] = email
@@ -393,17 +389,18 @@ def train():
             config_data["sagemaker"]["role_arn"] = role_arn
             save_config(config_data)
     
-    output_path = config_data.get("sagemaker", {}).get("trainer", {}).get("output_path")
-    output_path = typer.prompt("Please enter the S3 output path for SageMaker training jobs(e.g., 's3://remoterl' but ensure that the bucket exists and you have write access to it).", default=output_path)
-    config_data["sagemaker"]["trainer"]["output_path"] = output_path
+    output_path = config_data.get("sagemaker", {}).get("output_path")
+    output_path = typer.prompt("Please enter the S3 output path for SageMaker training jobs(e.g., 's3://remoterl' but ensure that the bucket exists and your region).", default=output_path)
+    config_data["sagemaker"]["output_path"] = output_path
     save_config(config_data)       
+    
     print("region:", region)
     print("role_arn:", role_arn)
     print("output_path:", output_path)
         
     email = typer.prompt("Please enter your email address for registration (leave blank to skip)", default="")
     email = email.strip() or None
-    initialize_sagemaker_access(role_arn, region, "trainer", email)
+    initialize_sagemaker_access(role_arn, region, email)
     
     input_config_names = ["sagemaker", "rllib"] 
     input_config = {}
@@ -417,75 +414,6 @@ def train():
     typer.echo("Submitting training job...")
     estimator = RemoteRL.train(sagemaker_obj, rllib_config)
     typer.echo(f"Training job submitted: {estimator.latest_training_job.name}")
-
-@app.command(
-    "infer",
-    short_help=help_texts["infer"]["short_help"],
-    help=auto_format_help(help_texts["infer"]["detailed_help"])
-)
-def infer():
-    ensure_config_exists()
-
-    config_data = load_config()
-
-    role_arn = config_data.get("sagemaker", {}).get("role_arn")
-    if not role_arn:
-        role_arn = typer.prompt("Please enter your IAM role ARN for SageMaker access")
-        config_data["sagemaker"]["role_arn"] = role_arn
-        save_config(config_data)
-
-    region = config_data.get("sagemaker", {}).get("region")
-    if not region:
-        region = typer.prompt("Please enter the AWS region for SageMaker access")
-        config_data["sagemaker"]["region"] = region
-        save_config(config_data)
-
-    # Validate role ARN, retry prompt if invalid
-    while True:
-        try:
-            _validate_sagemaker_role_arn(role_arn)
-            break
-        except ValueError as e:
-            print(e)
-            role_arn = typer.prompt("Please enter a valid IAM role ARN for SageMaker access")
-            config_data["sagemaker"]["role_arn"] = role_arn
-            save_config(config_data)
-
-    # Validate role ARN, retry prompt if invalid
-    while True:
-        try:
-            _validate_sagemaker_role_arn(role_arn)
-            break
-        except ValueError as e:
-            print(e)
-            role_arn = typer.prompt("Please enter a valid IAM role ARN for SageMaker access")
-            config_data["sagemaker"]["role_arn"] = role_arn
-            save_config(config_data)
-    
-    model_data = config_data.get ("sagemaker", {}).get("inference", {}).get("model_data")
-    model_data = typer.prompt("Please enter the S3 output path for SageMaker inference(e.g., 's3://remoterl/model.tar.gz').", default=model_data)
-    config_data["sagemaker"]["inference"]["model_data"] = model_data
-    save_config(config_data)       
-    print("region:", region)
-    print("role_arn:", role_arn)
-    print("model_data:", model_data)
-            
-    email = typer.prompt("Please enter your email address for registration (leave blank to skip)", default="")
-    email = email.strip() or None
-    initialize_sagemaker_access(role_arn, region, "inference")
-        
-    # Use the sagemaker configuration.
-    input_config_names = ["sagemaker"]
-    input_config = {name: config_data.get(name, {}) for name in input_config_names}
-    converted_obj = convert_to_objects(input_config)
-    
-    sagemaker_obj: SageMakerConfig = converted_obj["sagemaker"]
-
-    typer.echo("Deploying inference endpoint...")
-    
-    inference_api = RemoteRL.infer(sagemaker_obj)
-    
-    typer.echo(f"Inference endpoint deployed: {inference_api.endpoint_name}")
 
 @app.callback()
 def main(ctx: typer.Context):

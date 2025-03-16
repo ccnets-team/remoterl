@@ -9,8 +9,8 @@ config:
        Use dot notation to update configuration fields directly.
 
        For example:
-       remoterl config --batch_size 64 --lr_init 0.0005 --env_id CartPole-v1
-       remoterl config --trainer.max_run 360
+       remoterl config --batch_size 64 --lr_init 0.0005 --env CartPole-v1
+       remoterl config --max_run 360
 
        This mode updates any key in the top-level configuration (such as: rllib, sagemaker)
        without requiring dedicated subcommands.
@@ -67,9 +67,3 @@ train:
   detailed_help: |
     Launch a SageMaker training job for RemoteRL with configuration settings.
     This command loads training configuration from the saved config file.
-
-infer:
-  short_help: "Deploy or reuse a SageMaker inference endpoint for RemoteRL with configuration settings."
-  detailed_help: |
-    Deploy or reuse a SageMaker inference endpoint for RemoteRL with configuration settings.
-    This command loads inference configuration from the saved config file.
