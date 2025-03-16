@@ -1,0 +1,6 @@
+# requirements.txt
+
+msgpack
+requests
+gymnasium>=1.0.0
+gymnasium[mujoco]

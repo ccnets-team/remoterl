@@ -1,0 +1,75 @@
+config:
+  short_help: "Update configuration settings."
+  detailed_help: |
+    Update configuration settings.
+
+    This command supports two modes for modifying configuration:
+
+    1. Field Update Mode:
+       Use dot notation to update configuration fields directly.
+
+       For example:
+       remoterl config --batch_size 64 --lr_init 0.0005 --env_id CartPole-v1
+       remoterl config --trainer.max_run 360
+
+       This mode updates any key in the top-level configuration (such as: rllib, sagemaker)
+       without requiring dedicated subcommands.
+
+    2. Method Mode:
+       Use dedicated methods to add or remove configuration entries in specific sections.
+       The following functions are available, using the syntax:
+       remoterl config exploration set/del [identifier] [--option value ...]
+
+       a. Exploration Configuration:
+          - Set:
+            remoterl config exploration set continuous --type gaussian_noise --param1 0.1 --param2 0.001
+          - Delete:
+            remoterl config exploration del continuous
+
+    Choose Field Update Mode for simple, direct key modifications and Method Mode for more guided, complex configuration changes.
+
+edit:
+  short_help: "Open the configuration file in the system's default text editor for manual modification."
+  detailed_help: |
+    Open the configuration file in the system's default text editor for manual modification.
+    If the configuration file does not exist, create one with default values.
+
+clear:
+  short_help: "Clear configuration settings."
+  detailed_help: |
+    Clear configuration settings. If a section is provided, reset that section to its default.
+    Otherwise, delete the entire configuration file from disk.
+
+list:
+  short_help: "List the current configuration settings."
+  detailed_help: |
+    List the current configuration settings. If a section is provided,
+    only that part of the configuration is displayed.
+
+simulate:
+  short_help: "Start an environment simulation via the RemoteRL WebSocket server for cloud training."
+  detailed_help: |
+    Launch an environment simulation.
+
+    Porcess:    
+     1. Launch Simulation Server Automatically:
+        - RemoteRL CLI Starts a simulation server on user side and trainer on cloud side watining for sagemaker training job to start.
+
+     2. Monitor & Terminate:
+        - The simulation runs in the current terminal.
+        - Press Ctrl+C to gracefully terminate the simulation.
+
+    Examples:
+     remoterl simulate
+
+train:
+  short_help: "Launch a SageMaker training job for RemoteRL with configuration settings."
+  detailed_help: |
+    Launch a SageMaker training job for RemoteRL with configuration settings.
+    This command loads training configuration from the saved config file.
+
+infer:
+  short_help: "Deploy or reuse a SageMaker inference endpoint for RemoteRL with configuration settings."
+  detailed_help: |
+    Deploy or reuse a SageMaker inference endpoint for RemoteRL with configuration settings.
+    This command loads inference configuration from the saved config file.
