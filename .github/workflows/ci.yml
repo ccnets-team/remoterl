@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.10', '3.12']
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Verify CLI commands (config, edit, clear, list)
+        run: |
+          remoterl --help
+          remoterl config --help
+          remoterl edit --help
+          remoterl clear --help
+          remoterl list --help
+          remoterl config
+          remoterl edit
+          remoterl list
+
+      - name: Verify CLI commands (simulate local environments and pair websocket server for cloud training)
+        run: |
+          # Simulate WebSocket connections and verify client environment - remoterl training pairing logic
+          remoterl simulate --env-type gym --env Walker2d-v5 --num-workers 4 --num-envs-per-worker 256 --region us-east-1
+
+      - name: Uninstall package and verify clear command config deletion
+        run: |
+          remoterl clear
+          pip uninstall -y remoterl
+          python -c "import os; config = os.path.expanduser('~/.remoterl/config.yaml'); \
+                    exit(1) if os.path.exists(config) else exit(0)"

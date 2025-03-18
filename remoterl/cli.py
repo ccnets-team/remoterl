@@ -222,6 +222,8 @@ def simulate(
     typer.echo(f"Number of parallel environments: {num_workers}")
     typer.echo(f"AWS region: {region}")
     
+    ensure_config_exists()
+    
     configs = load_config()
     configs["sagemaker"]["region"] = region
     save_config(configs)

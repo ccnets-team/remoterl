@@ -29,10 +29,13 @@ class EnvAPI:
         self.shutdown_event = threading.Event()
         self.ws = websocket.WebSocket()
         remote_rl_server_url_display = remote_rl_server_url
+        self.cnt_msg = 0
+        self.msg_print_interval = 200
+        self.max_print_length = 200
         # remote_rl_server_url_display = remote_rl_server_url.replace("agent-gpt", "remoterl")
         print("Connecting to Remote RL server..., ", remote_rl_server_url_display)
-        self.patience = 60
-        self.patience_threshold = 60
+        self.patience = 120
+        self.patience_threshold = 120
         self.ws.connect(remote_rl_server_url)
         self.ws.settimeout(WEBSOCKET_TIMEOUT)
         
@@ -49,7 +52,9 @@ class EnvAPI:
     def check_alive(self):
         self.patience += 1
         if self.patience > self.patience_threshold:
-            heartbeat_message = "Training hasn't started yet but I am still alive."
+            heartbeat_message = (
+                f"No training activity detected. Environment {self.env_idx} is still online and waiting..."
+            )            
             if self.env_idx == 0:
                 print("Sending heartbeat: ", heartbeat_message)
             self.send_message("event", message=heartbeat_message, type="heartbeat")
@@ -72,9 +77,22 @@ class EnvAPI:
             try:
                 # Unpack received request payload
                 payload = self.unpack_request(packed_request)
+                
                 data = payload.get("data", {})
                 method = data.get("method")
                 env_key = data.get("env_key")
+                # Convert data to string and truncate if too long.
+                data_str = repr(data)
+                if len(data_str) > self.max_print_length:
+                    data_str = data_str[:self.max_print_length] + " ... [truncated]"
+
+                if self.cnt_msg % self.msg_print_interval == 0:
+                    print(
+                        f"[Msg {self.cnt_msg:05d}] Received request:\n"
+                        f"    Method : {method}\n"
+                        f"    Data   : {data_str}"
+                    )
+                self.cnt_msg += 1
 
                 # Execute method based on request
                 if method == "make":
@@ -93,7 +111,6 @@ class EnvAPI:
                     result = self.action_space(env_key)
                 else:
                     result = self.send_message("event", message=f"Unknown method: {method}")
-
                 packed_response = self.pack_response(result)
                 self.ws.send(packed_response)
 
