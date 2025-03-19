@@ -1,3 +1,4 @@
+#remoterl/local_simulator.py
 import argparse
 import typer
 import os
@@ -5,13 +6,14 @@ import platform
 import subprocess
 from typing import List
 
-def open_simulation_in_screen(extra_args: List[str]) -> subprocess.Popen:
+def launch_simulator(
+    args: List[str]) -> subprocess.Popen:
     env = os.environ.copy()
-    simulation_script = os.path.join(os.path.dirname(__file__), "simulation.py")
+    simulation_script = os.path.join(os.path.dirname(__file__), "local_simulator.py")
     system = platform.system()
-
+    
     if system == "Linux":
-        cmd_parts = ["python3", simulation_script] + extra_args
+        cmd_parts = ["python3", simulation_script] + args
         if not os.environ.get("DISPLAY"):
             # Headless mode: run in background without opening a terminal emulator.
             proc = subprocess.Popen(cmd_parts, env=env)
@@ -28,7 +30,7 @@ def open_simulation_in_screen(extra_args: List[str]) -> subprocess.Popen:
                     env=env
                 )
     elif system == "Darwin":
-        cmd_parts = ["python3", simulation_script] + extra_args
+        cmd_parts = ["python3", simulation_script] + args
         cmd_str = " ".join(cmd_parts)
         apple_script = (
             'tell application "Terminal"\n'
@@ -38,13 +40,14 @@ def open_simulation_in_screen(extra_args: List[str]) -> subprocess.Popen:
         )
         proc = subprocess.Popen(['osascript', '-e', apple_script], env=env)
     elif system == "Windows":
-        cmd_parts = ["python", simulation_script] + extra_args
+        cmd_parts = ["python", simulation_script] + args
         cmd_str = " ".join(cmd_parts)
         cmd = f'start cmd /k "{cmd_str}"'
         proc = subprocess.Popen(cmd, shell=True, env=env)
     else:
         typer.echo("Unsupported OS for launching a new terminal session.")
         raise typer.Exit(code=1)
+
     return proc
 
 def main():
@@ -58,11 +61,7 @@ def main():
 
     args = parser.parse_args()
 
-    from remoterl.utils.config_utils import load_config, save_config
-    from remoterl.env_host.server import EnvServer
-    import typer
 
-    config_data = load_config()
 
     remote_training_key = args.remote_training_key
     remote_rl_server_url = args.remote_rl_server_url
@@ -74,6 +73,7 @@ def main():
     agents_per_env = [base_agents + (1 if i < remainder else 0) for i in range(num_envs)]
     
     launchers = []
+    from remoterl.env_host.server import EnvServer
     for i in range(num_envs):
         env_idx = i
         launchers.append(
@@ -86,6 +86,8 @@ def main():
                 agents_per_env[i],
             )
         )
+    from remoterl.utils.config_utils import load_config, save_config
+    config_data = load_config()
     config_data["rllib"]["remote_training_key"] = remote_training_key  # fixed plural naming consistency
     save_config(config_data)
 

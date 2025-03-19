@@ -27,7 +27,6 @@ Below is a sample Python snippet showing how you might create an RLlib configura
 
 ```python
 from ray.rllib.algorithms.ppo import PPOConfig
-from ray.tune.registry import get_trainable_cls
 
 # Adjust some training parameters using PPOConfig
 algorithm_config = (
@@ -41,10 +40,10 @@ algorithm_config = (
 from remoterl.config.rllib import RemoteRLlibConfig
 
 # Create a new RLlib configuration instance using RemoteRLlibConfig
-rllib_config = RemoteRLlibConfig.from_config(algorithm_config)
+remoterl_config = RemoteRLlibConfig.from_config(algorithm_config)
 
 # Set up simulation parameters (e.g., for local debugging or environment verification)
-rllib_config.simulate(
+remoterl_config.simulate(
     env_type='gym',
     env="CartPole-v1",
     num_env_runners=1,
@@ -53,10 +52,10 @@ rllib_config.simulate(
 )
 
 # Retrieve the remote training key (if assigned)
-print("Remote Training Key:", rllib_config.remote_training_key)
+print("Remote Training Key:", remoterl_config.remote_training_key)
 
 # Export the configuration to a dictionary for cloud training
-sagemaker_hyperparameters = rllib_config.to_dict()
+sagemaker_hyperparameters = remoterl_config.to_dict()
 
 print("SageMaker Hyperparameters for Cloud Training:")
 print(sagemaker_hyperparameters)
@@ -67,13 +66,13 @@ print(sagemaker_hyperparameters)
 In this example, you can see how developers can set their own hyperparameters. The exported configuration will include only the modified parameters, ensuring that your cloud training job is efficient and exactly tailored to your needs.
 
 ```python
-# Assume you have already created a RemoteRLlibConfig instance (rllib_config) as in Example 1
+# Assume you have already created a RemoteRLlibConfig instance (remoterl_config) as in Example 1
 
 # For instance, update network settings:
-rllib_config.algorithm_config.model(num_layers=5, fcnet_hiddens=[256, 256], use_lstm=False)
+remoterl_config.algorithm_config.model(num_layers=5, fcnet_hiddens=[256, 256], use_lstm=False)
 
 # Export the updated configuration
-custom_hyperparameters = rllib_config.to_dict()
+custom_hyperparameters = remoterl_config.to_dict()
 
 # These hyperparameters are then used to launch your cloud training job seamlessly.
 print("Custom Hyperparameters Ready for Cloud Deployment:")
