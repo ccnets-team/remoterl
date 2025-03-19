@@ -344,7 +344,7 @@ def _validate_sagemaker_role_arn(role_arn: str) -> None:
     if not re.match(arn_regex, role_arn):
         raise ValueError(f"Invalid SageMaker role ARN: {role_arn}")
 
-def ensure_s3_output_path(output_path: str) -> str:
+def _ensure_s3_output_path(output_path: str) -> str:
     """
     Ensure the provided output path starts with 's3://'.
     Strips leading/trailing whitespace and any trailing slashes,
@@ -411,10 +411,7 @@ def train():
             config_data["sagemaker"]["role_arn"] = role_arn
             save_config(config_data)
     
-    if asked_role_arn:
-        typer.echo(f"Role ARN updated: {role_arn}")
-    else:
-        typer.echo(f"Role ARN found: {role_arn}")
+    typer.echo(f"Role ARN: {role_arn}")
         
     # Retrieve the default output path from config, or provide a fallback.
     default_output_path = config_data["sagemaker"].get("output_path")
@@ -427,7 +424,7 @@ def train():
             typer.echo("Warning: Default output path detected. Please enter a valid S3 path.")
             continue
         try:
-            s3_output_path = ensure_s3_output_path(output_path)
+            s3_output_path = _ensure_s3_output_path(output_path)
             config_data["sagemaker"]["output_path"] = s3_output_path
             save_config(config_data)            
             break  # Valid input; exit loop.
