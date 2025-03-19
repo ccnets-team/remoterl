@@ -42,6 +42,7 @@ jobs:
         run: |
           # Simulate WebSocket connections and verify client environment - remoterl training pairing logic
           remoterl simulate --env-type gym --env Walker2d-v5 --num-workers 4 --num-envs-per-worker 256 --region us-east-1
+          remoterl simulate --env-type gym --env Walker2d-v5 --num-workers 4 --num-envs-per-worker 256 --region ap-northeast-2
 
       - name: Uninstall package and verify clear command config deletion
         run: |

@@ -180,7 +180,7 @@ def wait_for_config_update(sent_remote_training_key, timeout=10):
 def connect_to_remote_rl_server(region: str, env_config: Dict) -> str:
     
     ws = websocket.WebSocket()
-    if region not in ["us-east-1"]:
+    if region not in ["us-east-1, ap-northeast-2"]:
         raise ValueError(f"Invalid region: {region}")
     
     remote_rl_server_url = f"wss://{region}.ccnets.org"
@@ -214,8 +214,11 @@ def simulate(
     env = env or typer.prompt("Please provide the environment name (e.g., 'Walker2d-v5')", default="Walker2d-v5")
     num_envs_per_worker = num_envs_per_worker or typer.prompt("Please provide the number of agents", type=int, default=64)
     num_workers = num_workers or typer.prompt("Please provide the number of parallel environments between 1~8", type=int, default=4)
-    region = region or typer.prompt("Please specify the AWS region. Currently, our service is built for the 'us-east-1' region; however, external users are welcome to use this server as well.", default="us-east-1")
-
+    region = region or typer.prompt(
+        "Please specify the AWS region. Currently, our service is built for the 'us-east-1' and 'ap-northeast-2' regions; however, external users are welcome to use this server as well.",
+        default="ap-northeast-2"
+    )
+    
     typer.echo(f"Environment type: {env_type}")
     typer.echo(f"Environment ID: {env}")
     typer.echo(f"Number of agents: {num_envs_per_worker}")
