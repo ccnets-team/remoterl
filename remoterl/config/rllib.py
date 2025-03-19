@@ -1,95 +1,66 @@
 from dataclasses import dataclass, field, asdict
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
+from ray.rllib.algorithms.algorithm_config import AlgorithmConfig
+from ray.tune.registry import get_trainable_cls
+
+def extract_modified_config(selected_config, base_config):
+    # Create a new dictionary with keys whose values differ or don't exist in the base_config.
+    return {
+        key: selected_config[key]
+        for key in selected_config
+        if key not in base_config or selected_config[key] != base_config[key]
+    }
 
 @dataclass
-class Exploration:
-    """Defines exploration parameters compatible with Ray RLLib exploration configs."""
-    type: str = "GaussianNoise"  # "GaussianNoise", "EpsilonGreedy", "OrnsteinUhlenbeck", etc.
-    initial_scale: Optional[float] = None
-    final_scale: Optional[float] = None
-    scale_timesteps: Optional[int] = None
-    epsilon_timesteps: Optional[int] = None
-    initial_epsilon: Optional[float] = None
-    final_epsilon: Optional[float] = None
-    ou_base_scale: Optional[float] = None
-    ou_theta: Optional[float] = None
-    ou_sigma: Optional[float] = None
-
+class RemoteRLConfig:
+    enable_rl_module_and_learner: bool = False
+    enable_env_runner_and_connector_v2: bool = False
+    enable_env_checking: bool = True
+    trainable_name: str = "PPO"
+    remote_training_key: Optional[str] = None
     def to_dict(self):
-        exploration_config = {"type": self.type}
-        if self.type == "GaussianNoise":
-            exploration_config.update({
-                "initial_scale": self.initial_scale or 0.1,
-                "final_scale": self.final_scale or 0.01,
-                "scale_timesteps": self.scale_timesteps or 10000,
-            })
-        elif self.type == "EpsilonGreedy":
-            exploration_config.update({
-                "initial_epsilon": self.initial_epsilon or 1.0,
-                "final_epsilon": self.final_epsilon or 0.01,
-                "epsilon_timesteps": self.epsilon_timesteps or 10000,
-            })
-        elif self.type == "OrnsteinUhlenbeckNoise":
-            exploration_config.update({
-                "ou_base_scale": self.ou_base_scale or 0.1,
-                "ou_theta": self.ou_theta or 0.15,
-                "ou_sigma": self.final_scale or 0.2,
-            })
-        return exploration_config
+        return asdict(self)
 
 @dataclass
 class RLLibConfig:
-    """RLLibConfig for Remote RL training using Ray RLLib and AWS SageMaker."""
+    algorithm_config: AlgorithmConfig = field(default_factory=AlgorithmConfig)
+    remoterl_config: RemoteRLConfig = field(default_factory=RemoteRLConfig)
     
-    # Environment and Remote Gateway parameters
-    remote_training_key: Optional[str] = None
-
-    # Training control
-    run_or_experiment: str = "PPO"
-    training_iteration: int = 50
-    checkpoint_at_end: bool = True
-
-
-    # Core RL Algorithm Parameters
-    gamma: float = 0.99
-    lambda_: float = 0.95
-    train_batch_size: int = 4000
-    rollout_fragment_length: int = 200
-    sgd_minibatch_size: int = 128
-    num_sgd_iter: int = 10
-    clip_param: float = 0.2
-
-    # Learning Rate
-    lr: float = 1e-4
-    lr_schedule: Optional[List[List[float]]] = None
-
-    # Model configuration
-    model: Dict[str, Any] = field(default_factory=lambda: {
-        "fcnet_hiddens": [256, 256],
-        "fcnet_activation": "relu"
-    })
-
-    # Exploration
-    exploration_config: Optional[Dict[str, Any]] = None
-
-    # Custom environment configuration
-    env_config: Dict[str, Any] = field(default_factory=dict)
-
-    def set_exploration(self, exploration: Exploration):
-        """Sets the exploration configuration in a way compatible with Ray RLLib."""
-        self.model["exploration_config"] = exploration.to_dict()
+    def __post_init__(self):
+        # Initialize the algorithm configuration with the specified parameters
+        self.algorithm_config = self.create_defualt_config()
+        self.algorithm_config = (
+            self.algorithm_config
+            .env_runners(rollout_fragment_length='auto', sample_timeout_s=60)
+            .training(train_batch_size=1024, num_sgd_iter=15, lr=1e-4)
+        )
+    
+    def create_defualt_config(self):
+        default_config = (get_trainable_cls(self.remoterl_config.trainable_name)
+                          .get_default_config()
+                          .api_stack(enable_rl_module_and_learner=False, enable_env_runner_and_connector_v2=False)
+                          .environment(disable_env_checking=True)
+                          )
+        
+        return default_config
 
     def set_config(self, **kwargs):
         for k, v in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
             else:
-                print(f"Warning: No attribute '{k}' in SageMakerConfig")
+                print(f"Warning: No attribute '{k}' in RLLibConfig")
 
     def to_dict(self) -> Dict[str, Any]:
-        """Returns a clean dictionary ready for RLLib."""
-        config_dict = asdict(self)
-        if "exploration_config" in self.model:
-            config_dict["exploration_config"] = self.model.pop("exploration_config")
-        return config_dict
-    
+        """Returns a clean dictionary ready for RLlib."""
+        # Obtain the default configuration for the specified algorithm
+        default_config = self.create_defualt_config().to_dict()
+        # Obtain the current configuration
+        current_config = self.algorithm_config.to_dict()
+        # Identify configurations that differ from the default
+        modified_config = extract_modified_config(current_config, default_config)
+        # Include remote RL configurations
+        remoterl_dict = self.remoterl_config.to_dict()    
+        # Merge modified configurations with remote RL settings
+        hyperparameters_dict = {**modified_config, **remoterl_dict}
+        return hyperparameters_dict

@@ -121,10 +121,9 @@ def clear_config(
         None,
     )
 ):
-    ensure_config_exists()
-    
     allowed_sections = set(TOP_CONFIG_CLASS_MAP.keys())
     if section:
+        ensure_config_exists()
         if section not in allowed_sections:
             typer.echo(typer.style(f"Invalid section '{section}'. Allowed sections: {', '.join(allowed_sections)}.", fg=typer.colors.YELLOW))
             raise typer.Exit()
@@ -163,7 +162,12 @@ def list_config(
         typer.echo("Current configuration:")
         for sec in TOP_CONFIG_CLASS_MAP.keys():
             if sec in current_config:
-                typer.echo(f"**{sec}**:")
+                if sec == "rllib":
+                    typer.echo("RLlib: (Showing only modified configuration)")
+                elif sec == "sagemaker":
+                    typer.echo("**SageMaker**: ")
+                else:
+                    typer.echo(f"**{sec}**:")
                 typer.echo(yaml.dump(current_config[sec], default_flow_style=False, sort_keys=False))
 
 # Define a function to poll for config changes.
@@ -205,8 +209,8 @@ def connect_to_remote_rl_server(region: str, env_config: Dict) -> str:
 def simulate(
     env_type: Optional[str] = typer.Option(None, "--env-type", help="Environment type: 'gym' or 'unity'"),
     env: Optional[str] = typer.Option(None, "--env", help="Environment name to simulate, e.g., 'Walker2d-v5'"),
-    num_workers: Optional[int] = typer.Option(None, "--num-workers", help="Number of parallel environments"),
-    num_envs_per_worker: Optional[int] = typer.Option(None, "--num-envs-per-worker", help="Number of envs per worker to simulate and train (1-8)"),
+    num_env_runners: Optional[int] = typer.Option(None, "--num-env-runners", help="Number of parallel environments"),
+    num_envs_per_env_runner: Optional[int] = typer.Option(None, "--num-envs-per-env-runner", help="Number of envs per worker to simulate and train (1-8)"),
     region: Optional[str] = typer.Option(None, "--region", help="AWS region for simulation/training"),
 ):
     ensure_config_exists()
@@ -221,8 +225,8 @@ def simulate(
     
     env_type = env_type or typer.prompt("Please provide the environment type ('gym' or 'unity')", default="gym")
     env = env or typer.prompt("Please provide the environment name (e.g., 'Walker2d-v5')", default="Walker2d-v5")
-    num_envs_per_worker = num_envs_per_worker or typer.prompt("Please provide the number of agents", type=int, default=64)
-    num_workers = num_workers or typer.prompt("Please provide the number of parallel environments between 1~8", type=int, default=4)
+    num_envs_per_env_runner = num_envs_per_env_runner or typer.prompt("Please provide the number of agents", type=int, default=64)
+    num_env_runners = num_env_runners or typer.prompt("Please provide the number of parallel environments between 1~8", type=int, default=4)
     region = region or typer.prompt(
         "Please specify the AWS region. Currently, our service is built for the 'us-east-1' and 'ap-northeast-2' regions; however, external users are welcome to use this server as well.",
         default=default_region
@@ -230,17 +234,16 @@ def simulate(
     
     typer.echo(f"Environment type: {env_type}")
     typer.echo(f"Environment ID: {env}")
-    typer.echo(f"Number of agents: {num_envs_per_worker}")
-    typer.echo(f"Number of parallel environments: {num_workers}")
+    typer.echo(f"Number of envs per worker: {num_envs_per_env_runner}")
+    typer.echo(f"Number of parallel environments: {num_env_runners}")
     typer.echo(f"AWS region: {region}")
-    
 
     configs["sagemaker"]["region"] = region
     save_config(configs)
         
     env_config = {
         "env_id": env,
-        "num_envs": num_workers,
+        "num_envs": num_env_runners,
         "entry_point": None,
         "env_dir": None,
     }
@@ -253,8 +256,8 @@ def simulate(
         "--remote_rl_server_url", remote_rl_server_url,
         "--env_type", env_type,
         "--env_id", env,
-        "--num_agents", str(num_workers * num_envs_per_worker),
-        "--num_envs", str(num_workers),
+        "--num_agents", str(num_env_runners * num_envs_per_env_runner),
+        "--num_envs", str(num_env_runners),
     ]
 
     # Dynamically add other args from env_config
