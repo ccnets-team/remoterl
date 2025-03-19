@@ -180,7 +180,7 @@ def wait_for_config_update(sent_remote_training_key, timeout=10):
 def connect_to_remote_rl_server(region: str, env_config: Dict) -> str:
     
     ws = websocket.WebSocket()
-    if region not in ["us-east-1, ap-northeast-2"]:
+    if region not in ["us-east-1", "ap-northeast-2"]:
         raise ValueError(f"Invalid region: {region}")
     
     remote_rl_server_url = f"wss://{region}.ccnets.org"
