@@ -21,7 +21,7 @@ install_requires = env_requirements + cli_dependencies
 
 setup(
     name="remoterl",
-    version="0.0.4",
+    version="0.0.5",
     packages=find_packages(), 
     include_package_data=True,
     package_data={
@@ -34,7 +34,6 @@ setup(
     },
     install_requires=install_requires,
     extras_require={
-         "mujoco": ["gymnasium[mujoco]"],
          "mlagents": ["mlagents_envs==0.30.0", "protobuf==3.20.0"],
     },        
     author="JunHo Park",

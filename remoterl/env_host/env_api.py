@@ -28,12 +28,10 @@ class EnvAPI:
         self.env_idx = env_idx
         self.shutdown_event = threading.Event()
         self.ws = websocket.WebSocket()
-        remote_rl_server_url_display = remote_rl_server_url
         self.cnt_msg = 0
         self.msg_print_interval = 200
         self.max_print_length = 200
-        # remote_rl_server_url_display = remote_rl_server_url.replace("agent-gpt", "remoterl")
-        print("Connecting to Remote RL server..., ", remote_rl_server_url_display)
+        print("Connecting to Remote RL server..., ", remote_rl_server_url)
         self.patience = 120
         self.patience_threshold = 120
         self.ws.connect(remote_rl_server_url)

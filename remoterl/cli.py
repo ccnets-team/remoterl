@@ -209,6 +209,15 @@ def simulate(
     num_envs_per_worker: Optional[int] = typer.Option(None, "--num-envs-per-worker", help="Number of envs per worker to simulate and train (1-8)"),
     region: Optional[str] = typer.Option(None, "--region", help="AWS region for simulation/training"),
 ):
+    ensure_config_exists()
+    
+    configs = load_config()
+    
+    user_region = configs.get("sagemaker", {}).get("region") 
+    if SageMakerConfig.DEFAULT_REGION == user_region:
+        user_region = "ap-northeast-2"
+    
+    default_region = region or user_region   
     
     env_type = env_type or typer.prompt("Please provide the environment type ('gym' or 'unity')", default="gym")
     env = env or typer.prompt("Please provide the environment name (e.g., 'Walker2d-v5')", default="Walker2d-v5")
@@ -216,7 +225,7 @@ def simulate(
     num_workers = num_workers or typer.prompt("Please provide the number of parallel environments between 1~8", type=int, default=4)
     region = region or typer.prompt(
         "Please specify the AWS region. Currently, our service is built for the 'us-east-1' and 'ap-northeast-2' regions; however, external users are welcome to use this server as well.",
-        default="ap-northeast-2"
+        default=default_region
     )
     
     typer.echo(f"Environment type: {env_type}")
@@ -225,9 +234,7 @@ def simulate(
     typer.echo(f"Number of parallel environments: {num_workers}")
     typer.echo(f"AWS region: {region}")
     
-    ensure_config_exists()
-    
-    configs = load_config()
+
     configs["sagemaker"]["region"] = region
     save_config(configs)
         
@@ -266,79 +273,63 @@ def simulate(
         
         dislay_output = "**Remote Training Key Under**\n" + yaml.dump(remote_training_key, default_flow_style=False, sort_keys=False)
         typer.echo(typer.style(dislay_output.strip(), fg=typer.colors.GREEN))
+        typer.secho("Simulation is now running. Please run 'remoterl train' to continue..", fg="green")
     except TimeoutError:
         typer.echo("Configuration update timed out. Terminating simulation process.")
         simulation_process.terminate()
         simulation_process.wait()
 
-def initialize_sagemaker_access(
+def register_beta_access(
     role_arn: str,
     region: str,
     email: Optional[str] = None
-):
+) -> bool:
     """
-    Initialize SageMaker access by registering your AWS account details.
+    Register your AWS account details for beta access to the service.
 
     - Validates the role ARN format.
     - Extracts your AWS account ID from the role ARN.
-    - Sends the account ID, region, and service type to the registration endpoint.
-    
-    Returns True on success; otherwise, returns False.
+    - Sends the account ID, region, and service type to the beta registration endpoint.
+
+    Returns True on successful registration; otherwise, returns False.
     """
-    # Validate the role ARN format.
-    if not re.match(r"^arn:aws:iam::\d{12}:role/[\w+=,.@-]+$", role_arn):
-        typer.echo(typer.style("Invalid role ARN format.", fg=typer.colors.YELLOW))
-        return False
-
     try:
-        account_id = role_arn.split(":")[4]
-    except IndexError:
-        typer.echo("Invalid role ARN. Unable to extract account ID.")
-        return False
+        # Validate the role ARN format.
+        if not re.match(r"^arn:aws:iam::\d{12}:role/[\w+=,.@-]+$", role_arn):
+            raise ValueError("Invalid role ARN format.")
 
-    typer.echo("Initializing access...")
-    
-    beta_register_url = "https://agentgpt-beta.ccnets.org"
-    payload = {
-        "clientAccountId": account_id,
-        "region": region,
-        "serviceType": "remoterl"
-    }
-    if email:
-        payload["Email"] = email
-    
-    headers = {'Content-Type': 'application/json'}
-    
-    try:
+        # Extract the account ID from the role ARN.
+        parts = role_arn.split(":")
+        if len(parts) < 5 or not parts[4]:
+            raise ValueError("Invalid role ARN. Unable to extract account ID.")
+        account_id = parts[4]
+
+        typer.echo("Registering beta access...")
+
+        beta_register_url = "https://agentgpt-beta.ccnets.org"
+        payload = {
+            "clientAccountId": account_id,
+            "region": region,
+            "serviceType": "remoterl"
+        }
+        if email:
+            payload["Email"] = email
+
+        headers = {'Content-Type': 'application/json'}
+
+        # Send the registration request.
         response = requests.post(beta_register_url, json=payload, headers=headers)
-    except Exception:
-        typer.echo("Request error.")
-        return False
+        if response.status_code != 200:
+            raise ValueError("Registration failed.")
 
-    if response.status_code != 200:
-        typer.echo(typer.style("Initialization failed.", fg=typer.colors.YELLOW))
-        return False
-
-    if response.text.strip() in ("", "null"):
-        typer.echo("Initialization succeeded.")
+        typer.echo("Registration succeeded.")
         return True
 
-    try:
-        data = response.json()
-    except Exception:
-        typer.echo(typer.style("Initialization failed.", fg=typer.colors.YELLOW))
+    except Exception as e:
+        typer.echo(typer.style(str(e), fg=typer.colors.YELLOW))
         return False
 
-    if data.get("statusCode") == 200:
-        typer.echo("Initialization succeeded.")
-        return True
-    else:
-        typer.echo(typer.style("Initialization failed.", fg=typer.colors.YELLOW))
-        return False
-
-import re
-
-def _validate_sagemaker_role_arn(role_arn):
+def _validate_sagemaker_role_arn(role_arn: str) -> None:
     """
     Validate SageMaker role ARN.
     Raises ValueError if invalid.
@@ -350,6 +341,24 @@ def _validate_sagemaker_role_arn(role_arn):
     if not re.match(arn_regex, role_arn):
         raise ValueError(f"Invalid SageMaker role ARN: {role_arn}")
 
+def ensure_s3_output_path(output_path: str) -> str:
+    """
+    Ensure the provided output path starts with 's3://'.
+    Strips leading/trailing whitespace and any trailing slashes,
+    and prepends 's3://' if necessary.
+    Raises a ValueError if the input is empty.
+    """
+    output_path = output_path.strip()
+    if not output_path:
+        raise ValueError("Output path cannot be empty.")
+    
+    output_path = output_path.rstrip('/')
+    
+    if not output_path.startswith("s3://"):
+        return "s3://" + output_path.lstrip('/')
+    
+    return output_path
+
 @app.command(
     "train",
     short_help=help_texts["train"]["short_help"],
@@ -359,53 +368,76 @@ def train():
     ensure_config_exists()
 
     config_data = load_config()
+    
+    config_data.setdefault("rllib", {})
+    remote_training_key = config_data["rllib"].get("remote_training_key")
+    region = config_data["sagemaker"].get("region")
+    if not remote_training_key:
+        typer.echo("Error: Remote training key not found. Please run 'remoterl simulate' to generate the key.")
+        raise typer.Exit()
+    else:
+        typer.echo(f"Remote training key found: {remote_training_key}")
+    while SageMakerConfig.DEFAULT_REGION == region:
+        typer.echo("Error: Region information is missing. Please run 'remoterl simulate' to get the region.")
+        raise typer.Exit()
+    typer.echo(f"Region: {region}")
 
-    role_arn = config_data.get("sagemaker", {}).get("role_arn")
-    if not role_arn:
-        role_arn = typer.prompt("Please enter your IAM role ARN for SageMaker access")
+    # Ensure the 'sagemaker' key exists in the configuration.
+    config_data.setdefault("sagemaker", {})
+    # Retrieve role ARN from config; prompt if missing.
+    role_arn = config_data["sagemaker"].get("role_arn")
+    asked_role_arn = False
+    if SageMakerConfig.DEFAULT_ROLE_ARN == role_arn:
+        role_arn = typer.prompt(
+            "Please enter your IAM role ARN for SageMaker access (e.g., "
+            "arn:aws:iam::123456789012:role/SageMakerExecutionRole). "
+            "You can find your role ARN in the AWS IAM console under Roles."
+        )        
         config_data["sagemaker"]["role_arn"] = role_arn
         save_config(config_data)
-
-    region = config_data.get("sagemaker", {}).get("region")
-    if not region:
-        region = typer.prompt("Please enter the AWS region for SageMaker access")
-        config_data["sagemaker"]["region"] = region
-        save_config(config_data)
-
-    # Validate role ARN, retry prompt if invalid
+        asked_role_arn = True
+    # Validate role ARN and re-prompt until valid.
     while True:
         try:
             _validate_sagemaker_role_arn(role_arn)
             break
         except ValueError as e:
-            print(e)
+            typer.echo(f"Error: {e}")
+            asked_role_arn = True
             role_arn = typer.prompt("Please enter a valid IAM role ARN for SageMaker access")
             config_data["sagemaker"]["role_arn"] = role_arn
             save_config(config_data)
-
-    # Validate role ARN, retry prompt if invalid
+    
+    if asked_role_arn:
+        typer.echo(f"Role ARN updated: {role_arn}")
+    else:
+        typer.echo(f"Role ARN found: {role_arn}")
+        
+    # Retrieve the default output path from config, or provide a fallback.
+    default_output_path = config_data["sagemaker"].get("output_path")
     while True:
+        output_path = typer.prompt(
+            "Please enter the S3 output path in your region",
+            default=default_output_path
+        )
+        if output_path == SageMakerConfig.DEFAULT_OUTPUT_PATH:
+            typer.echo("Warning: Default output path detected. Please enter a valid S3 path.")
+            continue
         try:
-            _validate_sagemaker_role_arn(role_arn)
-            break
-        except ValueError as e:
-            print(e)
-            role_arn = typer.prompt("Please enter a valid IAM role ARN for SageMaker access")
-            config_data["sagemaker"]["role_arn"] = role_arn
-            save_config(config_data)
+            s3_output_path = ensure_s3_output_path(output_path)
+            config_data["sagemaker"]["output_path"] = s3_output_path
+            save_config(config_data)            
+            break  # Valid input; exit loop.
+        except Exception as e:
+            typer.echo(f"Error: {e}\nPlease try again.")
     
-    output_path = config_data.get("sagemaker", {}).get("output_path")
-    output_path = typer.prompt("Please enter the S3 output path for SageMaker training jobs(e.g., 's3://remoterl' but ensure that the bucket exists and your region).", default=output_path)
-    config_data["sagemaker"]["output_path"] = output_path
-    save_config(config_data)       
-    
-    print("region:", region)
-    print("role_arn:", role_arn)
-    print("output_path:", output_path)
+    # Print the final values for confirmation.
+    typer.echo(f"Output Path: {s3_output_path}")
         
     email = typer.prompt("Please enter your email address for registration (leave blank to skip)", default="")
     email = email.strip() or None
-    initialize_sagemaker_access(role_arn, region, email)
+    
+    register_beta_access(role_arn, region, email)
     
     input_config_names = ["sagemaker", "rllib"] 
     input_config = {}
@@ -417,7 +449,9 @@ def train():
     rllib_config: RLLibConfig = converted_obj["rllib"]
     
     typer.echo("Submitting training job...")
+    
     estimator = RemoteRL.train(sagemaker_obj, rllib_config)
+    
     typer.echo(f"Training job submitted: {estimator.latest_training_job.name}")
 
 @app.callback()
