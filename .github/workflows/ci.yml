@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    if: false
+    if: true
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
