@@ -442,18 +442,16 @@ def train():
     
     register_beta_access(role_arn, region, email)
     
-    input_config_names = ["sagemaker", "rllib"] 
     input_config = {}
-    for name in input_config_names:
+    for name in ["sagemaker"] :
         input_config[name] = config_data.get(name, {})
     converted_obj = convert_to_objects(input_config)
-    
     sagemaker_obj: SageMakerConfig = converted_obj["sagemaker"]
-    rllib_config: RLLibConfig = converted_obj["rllib"]
+    hyperparameters = config_data["rllib"]
     
     typer.echo("Submitting training job...")
     
-    estimator = RemoteRL.train(sagemaker_obj, rllib_config)
+    estimator = RemoteRL.train(sagemaker_obj, hyperparameters)
     
     typer.echo(f"Training job submitted: {estimator.latest_training_job.name}")
 

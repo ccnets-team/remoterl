@@ -12,7 +12,7 @@ class RemoteRL:
         pass
         
     @staticmethod
-    def train(sagemaker_config: SageMakerConfig, rllib_config: RLLibConfig):
+    def train(sagemaker_config: SageMakerConfig, hyperparameters):
         
         # Check for default output_path
         if sagemaker_config.output_path == sagemaker_config.DEFAULT_OUTPUT_PATH:
@@ -21,7 +21,6 @@ class RemoteRL:
             raise ValueError("Invalid region: Please update the SageMaker region to a valid AWS region.")
         
         image_uri = sagemaker_config.get_image_uri()
-        hyperparameters = rllib_config.to_dict()
 
         estimator = Estimator(
             image_uri=image_uri,
