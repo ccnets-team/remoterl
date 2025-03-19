@@ -4,6 +4,5 @@ msgpack
 requests
 gymnasium>=1.0.0
 gymnasium[mujoco]
-ray[rllib]
+ray[rllib]>=2.40
 torch
-tensorflow-probability
