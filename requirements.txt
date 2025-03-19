@@ -5,4 +5,5 @@ requests
 gymnasium>=1.0.0
 gymnasium[mujoco]
 ray[rllib]
-torch   
+torch
+tensorflow-probability
