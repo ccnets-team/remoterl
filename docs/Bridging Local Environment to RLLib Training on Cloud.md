@@ -48,4 +48,3 @@ RemoteRL’s CLI makes it effortless to configure, simulate, and train:
 ## Conclusion
 
 RemoteRL empowers you to bridge the gap between local customization and robust, scalable cloud RL training. With a refined RLlib configuration integrated seamlessly into AWS SageMaker deployments, you can fine-tune your RL algorithms locally and let RemoteRL manage the cloud training complexities.
-```

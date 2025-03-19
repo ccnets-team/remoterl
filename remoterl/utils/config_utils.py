@@ -2,7 +2,7 @@ import os
 import yaml
 from typing import List, Dict
 
-from ..config.rllib import RLLibConfig
+from ..config.rllib import RemoteRLlibConfig
 from ..config.sagemaker import SageMakerConfig
 
 from remoterl import __version__ as CURRENT_REMOTE_RL_VERSION
@@ -10,7 +10,7 @@ from remoterl import __version__ as CURRENT_REMOTE_RL_VERSION
 DEFAULT_CONFIG_PATH = os.path.expanduser("~/.remoterl/config.yaml")
 
 TOP_CONFIG_CLASS_MAP = {
-    "rllib": RLLibConfig,
+    "rllib": RemoteRLlibConfig,
     "sagemaker": SageMakerConfig,
 }
 

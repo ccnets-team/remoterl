@@ -5,7 +5,7 @@
 from sagemaker.estimator import Estimator
 
 from .config.sagemaker import SageMakerConfig
-from .config.rllib import RLLibConfig
+from .config.rllib import RemoteRLlibConfig
 
 class RemoteRL:
     def __init__(self):

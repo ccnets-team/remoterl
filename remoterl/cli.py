@@ -21,7 +21,7 @@ import json
 import websocket
 from .core import RemoteRL
 from .config.sagemaker import SageMakerConfig
-from .config.rllib import RLLibConfig
+from .config.rllib import RemoteRLlibConfig
 from typing import Optional, Dict
 import requests 
 from .simulation import open_simulation_in_screen
