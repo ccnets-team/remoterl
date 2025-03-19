@@ -21,7 +21,7 @@ class RemoteRL:
             raise ValueError("Invalid region: Please update the SageMaker region to a valid AWS region.")
         
         image_uri = sagemaker_config.get_image_uri()
-        rllib_config_dict = rllib_config.to_dict()
+        hyperparameters = rllib_config.to_dict()
 
         estimator = Estimator(
             image_uri=image_uri,
@@ -31,7 +31,7 @@ class RemoteRL:
             output_path=sagemaker_config.output_path,
             max_run=sagemaker_config.max_run,
             region=sagemaker_config.region,
-            rllib_config=rllib_config_dict
+            hyperparameters=hyperparameters
         )
         estimator.fit()
         return estimator
