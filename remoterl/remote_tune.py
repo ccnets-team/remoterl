@@ -22,12 +22,20 @@ def expand_space(space, num_envs):
         # For other space types, you might just create a Tuple of the space repeated.
         return spaces.Tuple([space for _ in range(num_envs)])
 
+def validate_array_elements(arr, valid_values):
+    return np.all(np.isin(arr, valid_values))
+
+def assert_valid_array(arr, valid_values):
+    if not validate_array_elements(arr, valid_values):
+        raise ValueError(f"Invalid array {arr}. Expected all elements to be in {valid_values}.")
+
 class CustomGymEnv:
     def __init__(self, env, **kwargs):
         # `env` can be a single environment or a list of environments.
         self.env = env
         self.observation_space = kwargs.get("observation_space")
         self.action_space = kwargs.get("action_space")
+        self.num_envs = kwargs.get("num_envs", 1)
         
     @classmethod
     def make(cls, name: str, **kwargs):
@@ -40,45 +48,19 @@ class CustomGymEnv:
 
     @classmethod
     def make_vec(cls, name: str, num_envs, **kwargs):
-        envs = [gymnasium.make(name, **kwargs) for _ in range(num_envs)]
-        # Expand the observation and action spaces based on the first environment.
-        obs_space = expand_space(envs[0].observation_space, num_envs)
-        act_space = expand_space(envs[0].action_space, num_envs)
-        return cls(envs, observation_space=obs_space, action_space=act_space)
+        envs = gymnasium.make_vec(name, num_envs, **kwargs)
+        obs_space = envs.observation_space  
+        act_space = envs.action_space
+        return cls(envs, observation_space=obs_space, action_space=act_space, num_envs = num_envs)
     
     def reset(self, **kwargs):
-        if isinstance(self.env, list):
-            observations, infos = [], []
-            for e in self.env:
-                obs, info = e.reset(**kwargs)
-                observations.append(obs)
-                # infos.append(info)
-            observations = np.array(observations)
-            infos = {}
-            return observations, infos
-        else:
-            return self.env.reset(**kwargs)
+        return self.env.reset(**kwargs)
 
     def step(self, action):
-        # In vectorized mode, `action` is assumed to be an iterable of actions,
-        # one for each environment.
-        if isinstance(self.env, list):
-            observations, rewards, terminations, truncations = [], [], [], []
-            for e, act in zip(self.env, action):
-                obs, rew, terminated, truncated, info = e.step(act)
-                observations.append(obs)
-                rewards.append(rew)
-                terminations.append(terminated)
-                truncations.append(truncated)
-            observations = np.array(observations)
-            rewards = np.array(rewards)
-            terminations = np.array(terminations)
-            truncations = np.array(truncations)
-            infos = {}
-            print("Observations:", observations.shape)
-            return observations, rewards, terminations, truncations, infos
-        else:
-            return self.env.step(action)
+        if isinstance(self.action_space, (spaces.Discrete, spaces.MultiDiscrete)):
+            action = np.array(action, dtype=np.int32)
+            action = action.reshape(self.action_space.shape)
+        return self.env.step(action)
 
     def close(self):
         if isinstance(self.env, list):
