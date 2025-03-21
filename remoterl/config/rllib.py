@@ -2,8 +2,6 @@ from dataclasses import dataclass
 from typing import Optional, Type, Dict, Any
 from ray.rllib.algorithms.algorithm_config import AlgorithmConfig
 from ray.tune.registry import get_trainable_cls
-from ..cloud_trainer import CloudTrainer
-from ..utils.remote_utils import do_simulation
 
 def extract_modified_config(selected_config, base_config):
     # Create a new dictionary with keys whose values differ or don't exist in the base_config.
@@ -33,7 +31,7 @@ class RemoteRLlibConfig:
             )
     
     @classmethod
-    def _build_default_config(cls, trainable_name: str) -> AlgorithmConfig:
+    def _build_default_config(cls, trainable_name) -> AlgorithmConfig:
         return (
             get_trainable_cls(trainable_name)
             .get_default_config()
@@ -50,7 +48,9 @@ class RemoteRLlibConfig:
             instance.algorithm_config = default_config.copy()
         else:
             # Use the provided config's trainable name.
-            default_config = cls._build_default_config(config.algo_class)
+            print(f"Using trainable name: {instance.trainable_name}")
+            trainable_name = config.algo_class.__name__
+            default_config = cls._build_default_config(trainable_name)
             instance.__default_config = default_config
             instance.algorithm_config = default_config.from_dict(config.to_dict())
         return instance
@@ -70,14 +70,3 @@ class RemoteRLlibConfig:
         modified_config["trainable_name"] = self.trainable_name
         modified_config["remote_training_key"] = self.remote_training_key
         return modified_config
-
-    def simulate(self, env_type, env, num_envs_per_env_runner, num_env_runners, region):
-        do_simulation(env_type, env, num_envs_per_env_runner, num_env_runners, region)
-
-    def train(self, sagemaker_config):
-        hyperparams = self.to_dict()  # Ensure the configuration is up-to-date before training.
-        cloud_trainer = CloudTrainer(hyperparams, sagemaker_config)
-        results = cloud_trainer.train()
-        return results
-        
-        

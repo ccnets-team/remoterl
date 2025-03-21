@@ -70,9 +70,10 @@ def do_simulation(env_type, env, num_envs_per_env_runner, num_env_runners, regio
         print("Remote Training Key for simulation updated successfully:")
         print("**Remote Training Key Under**\n")
         print(received_remote_training_key)
-        print("Simulation is now running. Please run 'remoterl train' to continue..", fg="green")
+        print("Simulation is now running. Please run 'remoterl train' to continue..")
     except TimeoutError:
         print("Configuration update timed out. Terminating simulation process.")
         simulation_terminal.terminate()
         simulation_terminal.wait()
-        
+    
+    return remote_training_key
