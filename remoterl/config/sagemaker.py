@@ -9,6 +9,7 @@ class SageMakerConfig:
     DEFAULT_ROLE_ARN = "arn:aws:iam::<your-aws-account-id>:role/SageMakerExecutionRole"
     DEFAULT_OUTPUT_PATH = "s3://<your-output-path>/"
     DEFAULT_REGION = "<your-aws-region>"
+    BASE_REGION = "ap-northeast-2"
     
     role_arn: Optional[str] = DEFAULT_ROLE_ARN
     output_path: Optional[str] = DEFAULT_OUTPUT_PATH

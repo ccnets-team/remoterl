@@ -40,8 +40,6 @@ def do_simulation(env_type, env, num_envs_per_env_runner, num_env_runners, regio
     env_config = {
         "env_id": env,
         "num_envs": num_env_runners,
-        "entry_point": None,
-        "env_dir": None,
     }
     remote_rl_server_url, remote_training_key = connect_to_remote_rl_server(region, env_config)
 

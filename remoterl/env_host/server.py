@@ -16,8 +16,7 @@ class EnvServer(EnvAPI):
         env_idx,
         num_agents,
     ):
-
-        if env_type.lower() == "gym":
+        if env_type.lower() in ["gym", "gymnasium", "mujoco"]:
             from ..wrappers.gym_env import GymEnv, is_gymnasium_envs
             env_wrapper = GymEnv
 
@@ -31,7 +30,7 @@ class EnvServer(EnvAPI):
                         "Please install it via: pip install 'gymnasium[mujoco]'"
                     )
                    
-        elif env_type.lower() == "unity":
+        elif env_type.lower() in ["unity", "mlagents"]:
             try:
                 import mlagents_envs
                 import google.protobuf
@@ -47,8 +46,11 @@ class EnvServer(EnvAPI):
             env_wrapper = UnityEnv
 
         else:
-            raise ValueError(f"Unknown env type '{env_type}'. Choose 'unity' or 'gym'.")
-
+            if not (env_type.lower() in ["custom", "custom_gym", "remote", "remote_tune"]):
+                print(f"Unknown environment type: {env_type}. Defaulting to 'custom' environment.")
+            from ..remote_tune import CustomGymEnv
+            env_wrapper = CustomGymEnv
+            
         super().__init__(env_wrapper, remote_training_key, remote_rl_server_url, env_idx, num_agents)
 
     def __exit__(self, exc_type, exc_value, traceback):
