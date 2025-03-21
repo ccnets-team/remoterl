@@ -17,7 +17,7 @@ def main():
     # tune.register_env("corridor-env", lambda config: SimpleCorridor(config))
     remote_tune.register_env("corridor-env", lambda config: SimpleCorridor(config))
     
-    training_key = remote_config.simulate()
+    training_key = remote_config.simulate(env = "corridor-env")
     print("Remote Training Key:", training_key)
     
     print("configs: ", remote_config.to_dict())
@@ -34,6 +34,9 @@ def main():
         role_arn=role_arn,
         output_path=output_path,
     )
+    
+    print("final configs: ", remote_config.to_dict())
+    
     # Launch the training job on the cloud.
     training_result = remote_config.train()
     print("Training job submitted. Result:", training_result)

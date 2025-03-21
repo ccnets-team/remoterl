@@ -10,16 +10,16 @@ from typing import Callable
 class CustomGymEnv:
     env_creator = gymnasium  # Default to the gymnasium module
     
-    @classmethod
-    def make(cls, name: str, **kwargs):
+    @staticmethod
+    def make(name: str, **kwargs):
         # Use the env_creator's make method to create the environment.
-        env = cls.env_creator.make(name, **kwargs)
+        env = CustomGymEnv.env_creator.make(name, **kwargs)
         return env
 
-    @classmethod
-    def make_vec(cls, name: str, num_envs, **kwargs):
+    @staticmethod
+    def make_vec(name: str, num_envs, **kwargs):
         # Use the env_creator's make_vec method to create a vectorized environment.
-        env = cls.env_creator.make_vec(name, num_envs=num_envs, **kwargs)
+        env = CustomGymEnv.env_creator.make_vec(name, num_envs=num_envs, **kwargs)
         return env
 
 def register_env(name: str, env_creator: Callable):

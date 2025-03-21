@@ -145,6 +145,7 @@ class RemoteConfig(AlgorithmConfig):
     def _remove_internal_keys(self, config_dict: dict):
         for key in self._internal_keys:
             config_dict.pop(key, None)
+        config_dict.pop("_internal_keys", None)
         return config_dict
     
     def train(self):
@@ -153,7 +154,7 @@ class RemoteConfig(AlgorithmConfig):
         
         Note: SageMaker parameters must be configured using `config_sagemaker()` prior to training.
         """
-        config_dict = super(RemoteConfig, self).to_dict()
+        config_dict = self.to_dict()
         config_dict = self._remove_internal_keys(config_dict)
         
         config_dict["trainable_name"] = self.trainable_name
