@@ -2,7 +2,6 @@
 from remoterl import remote_tune 
 from remoterl.remote_config import RemoteConfig
 from ray.rllib.algorithms.ppo import PPOConfig
-from ray.rllib.examples.envs.custom_gym_env import SimpleCorridor
 
 def main():
     # Initialize with an RLlib configuration.
@@ -14,9 +13,9 @@ def main():
     )
     remote_config = RemoteConfig(config=config)
     
-    remote_tune.register_env("3DBallHard", lambda config: SimpleCorridor(config))
+    env_dir = "path/to/unity/env/3DBallHard"   
     
-    remote_config.simulate(env_type="unity")
+    remote_config.simulate(env_type="unity", env_dir=env_dir)
     
     role_arn = input("Enter your SageMaker role ARN (or press enter to use dummy): ") or "arn:aws:iam::123456789012:role/SageMakerExecutionRole"
     output_path = input("Enter your S3 output path (or press enter to use dummy): ") or "s3://remoterl"

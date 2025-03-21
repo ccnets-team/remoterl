@@ -19,6 +19,15 @@ from ..utils.conversion_utils import (
     space_to_dict,
 )
 
+def default(o):
+    if isinstance(o, (np.int64, np.int32)):
+        # Convert to float first then to int
+        return int(float(o))
+    elif isinstance(o, np.float64):
+        return float(o)
+    # Add additional conversions if needed.
+    raise TypeError(f"Unserializable object {o} of type {type(o)}")
+
 WEBSOCKET_TIMEOUT = 1
 class EnvAPI:
     def __init__(self, env_wrapper, remote_training_key, remote_rl_server_url, 
@@ -118,7 +127,7 @@ class EnvAPI:
                 continue
 
     def pack_response(self, result):
-        packed = msgpack.packb(result, use_bin_type=True)
+        packed = msgpack.packb(result, use_bin_type=True, default=default)
         packed_response = base64.b64encode(packed).decode('utf-8')
         return packed_response
 

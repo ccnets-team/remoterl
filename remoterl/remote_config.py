@@ -99,6 +99,8 @@ class RemoteConfig(AlgorithmConfig):
         env: str = NotProvided,
         num_env_runners: int = NotProvided,
         num_envs_per_env_runner: int = NotProvided,
+        entry_point = None,
+        env_dir = None, 
         region: Optional[str] = None
     ) -> str:
         """
@@ -136,7 +138,8 @@ class RemoteConfig(AlgorithmConfig):
             self.env = env
         
         remote_training_key = do_simulation(
-            env_type, self.env, self.num_envs_per_env_runner, self.num_env_runners, self._sagemaker.region  
+            env_type, self.env, self.num_envs_per_env_runner, self.num_env_runners, entry_point, env_dir,
+            self._sagemaker.region  
         )
         
         self.remote_training_key = remote_training_key

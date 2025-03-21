@@ -11,7 +11,7 @@ class UnityEnv(Env):
     env_id = None
 
     @classmethod
-    def register(cls, env_id, env_entry_point, env_dir):
+    def register(cls, env_id, env_dir):
         """
         Register a Unity environment by setting the class-level entry_point and env_id.
         If the environment is already registered with the same values, skip updating.

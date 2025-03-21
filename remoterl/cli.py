@@ -205,8 +205,6 @@ def simulate(
     env_config = {
         "env_id": env,
         "num_envs": num_env_runners,
-        "entry_point": None,
-        "env_dir": None,
     }
 
     from .utils.remote_utils import connect_to_remote_rl_server

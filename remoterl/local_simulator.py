@@ -58,10 +58,10 @@ def main():
     parser.add_argument("--env_id", required=True)
     parser.add_argument("--num_envs", type=int, required=True)
     parser.add_argument("--num_agents", type=int, required=True)
+    parser.add_argument("--entry_point", default=None)
+    parser.add_argument("--env_dir", default=None)
 
     args = parser.parse_args()
-
-
 
     remote_training_key = args.remote_training_key
     remote_rl_server_url = args.remote_rl_server_url
@@ -69,9 +69,23 @@ def main():
     env_id = args.env_id
     num_envs = args.num_envs
     num_agents = args.num_agents
+    entry_point = args.entry_point
+    env_dir = args.env_dir
     base_agents, remainder = divmod(num_agents, num_envs)
     agents_per_env = [base_agents + (1 if i < remainder else 0) for i in range(num_envs)]
     
+    if entry_point:
+        if env_type == "gym":
+            from remoterl.wrappers.gym_env import GymEnv
+            GymEnv.register(env_id, entry_point)
+        elif env_type == "custom_gym":
+            from remoterl.remote_tune import CustomGymEnv
+            CustomGymEnv.register(env_id, entry_point)
+    elif env_dir:
+        if env_type == "unity":
+            from remoterl.wrappers.unity_env import UnityEnv
+            UnityEnv.register(env_id, entry_point)
+                                
     launchers = []
     from remoterl.env_host.server import EnvServer
     for i in range(num_envs):
