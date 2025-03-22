@@ -168,7 +168,7 @@ def list_config(
     help=auto_format_help(help_texts["simulate"]["detailed_help"]),
 )
 def simulate(
-    env_type: Optional[str] = typer.Option(None, "--env-type", help="Environment type: 'gym' or 'unity'"),
+    env_type: Optional[str] = typer.Option(None, "--env-type", help="Environment type: 'gym', 'unity', 'rllb'"),
     env: Optional[str] = typer.Option(None, "--env", help="Environment name to simulate, e.g., 'Walker2d-v5'"),
     num_env_runners: Optional[int] = typer.Option(None, "--num-env-runners", help="Number of parallel environments"),
     num_envs_per_env_runner: Optional[int] = typer.Option(None, "--num-envs-per-env-runner", help="Number of envs per worker to simulate and train (1-8)"),
@@ -184,7 +184,7 @@ def simulate(
     
     default_region = region or user_region   
     
-    env_type = env_type or typer.prompt("Please provide the environment type ('gym' or 'unity')", default="gym")
+    env_type = env_type or typer.prompt("Please provide the environment type ('rllib', 'gym', 'unity')", default="rllib")
     env = env or typer.prompt("Please provide the environment name (e.g., 'Humanoid-v5')", default="Humanoid-v5")
     num_envs_per_env_runner = num_envs_per_env_runner or typer.prompt("Please provide the number of agents", type=int, default=64)
     num_env_runners = num_env_runners or typer.prompt("Please provide the number of parallel environments between 1~8", type=int, default=4)

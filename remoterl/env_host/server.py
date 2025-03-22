@@ -46,10 +46,10 @@ class EnvServer(EnvAPI):
             env_wrapper = UnityEnv
 
         else:
-            if not (env_type.lower() in ["custom", "custom_gym", "remote", "remote_tune"]):
+            if not (env_type.lower() in ["rllib", "custom", "custom_gym", "remote", "remote_tune"]):
                 print(f"Unknown environment type: {env_type}. Defaulting to 'custom' environment.")
-            from ..remote_tune import CustomGymEnv
-            env_wrapper = CustomGymEnv
+            from ..remote_tune import RLlibEnv
+            env_wrapper = RLlibEnv
             
         super().__init__(env_wrapper, remote_training_key, remote_rl_server_url, env_idx, num_agents)
 

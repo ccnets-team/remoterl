@@ -79,8 +79,8 @@ def main():
             from remoterl.wrappers.gym_env import GymEnv
             GymEnv.register(env_id, entry_point)
         elif env_type == "custom_gym":
-            from remoterl.remote_tune import CustomGymEnv
-            CustomGymEnv.register(env_id, entry_point)
+            from remoterl.remote_tune import RLlibEnv
+            RLlibEnv.register(env_id, entry_point)
     elif env_dir:
         if env_type == "unity":
             from remoterl.wrappers.unity_env import UnityEnv

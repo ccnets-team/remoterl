@@ -5,6 +5,7 @@ gymnasium.logger.min_level = gymnasium.logger.WARN
 gymnasium.logger.warn = lambda *args, **kwargs: None
 from ray.tune.registry import _global_registry, ENV_CREATOR
 from gymnasium import spaces
+from typing import Optional, List, Any
 import numpy as np
 
 def expand_space(space, num_envs):
@@ -29,43 +30,83 @@ def assert_valid_array(arr, valid_values):
     if not validate_array_elements(arr, valid_values):
         raise ValueError(f"Invalid array {arr}. Expected all elements to be in {valid_values}.")
 
-class CustomGymEnv:
-    def __init__(self, env, **kwargs):
-        # `env` can be a single environment or a list of environments.
+class RLlibEnv:
+    def __init__(self, env):
+        # env can be a single env or multi-agent env
         self.env = env
-        self.observation_space = kwargs.get("observation_space")
-        self.action_space = kwargs.get("action_space")
-        self.num_envs = kwargs.get("num_envs", 1)
+        self.is_vectorized = isinstance(env, list)
+        if self.is_vectorized:
+            self.num_envs = len(env)
+            self.single_observation_space = env[0].observation_space
+            self.single_action_space = env[0].action_space 
+            self.observation_space = expand_space(self.single_observation_space, self.num_envs)
+            self.action_space = expand_space(self.single_action_space, self.num_envs)
+        else:
+            self.single_observation_space = env.observation_space
+            self.single_action_space = env.action_space
+            self.observation_space = env.observation_space
+            self.action_space = env.action_space
+            self.num_envs = 1
         
     @classmethod
-    def make(cls, name: str, **kwargs):
-        env = gymnasium.make(name, **kwargs)
-        return cls(
-            env,
-            observation_space=env.observation_space,
-            action_space=env.action_space
-        )
+    def make(cls, env_id: str, **kwargs):
+        env = gymnasium.make(env_id, **kwargs)
+        return cls(env)
 
     @classmethod
-    def make_vec(cls, name: str, num_envs, **kwargs):
-        envs = gymnasium.make_vec(name, num_envs, **kwargs)
-        obs_space = envs.observation_space  
-        act_space = envs.action_space
-        return cls(envs, observation_space=obs_space, action_space=act_space, num_envs = num_envs)
-    
-    def reset(self, **kwargs):
-        return self.env.reset(**kwargs)
+    def make_vec(cls, env_id: str, num_envs: int, **kwargs):
+        multi_agent_env = [gymnasium.make(env_id, **kwargs) for _ in range(num_envs)]
+        return cls(multi_agent_env)
 
-    def step(self, action):
-        if isinstance(self.action_space, (spaces.Discrete, spaces.MultiDiscrete)):
-            action = np.array(action, dtype=np.int32)
-            action = action.reshape(self.action_space.shape)
-        return self.env.step(action)
+    def reset(self, seed=None, options=None):
+        if not self.is_vectorized:
+            obs, info = self.env.reset(seed=seed, options=options)
+            return obs, info
 
+        obs_batch, info_batch = [], []
+
+        for idx in range(self.num_envs):
+            obs, info = self.env[idx].reset(seed=seed, options=options)
+            obs_batch.append(obs)
+            info_batch.append(info)
+
+        return np.array(obs_batch), info_batch
+
+    def step(self, actions: List[Optional[Any]]):
+        if not self.is_vectorized:
+            return self.env.step(actions)
+
+        assert len(actions) == self.num_envs, "The length of actions must match num_envs"
+
+        obs_batch, reward_batch, terminated_batch, truncated_batch, info_batch = [], [], [], [], []
+
+        for idx in range(self.num_envs):
+            if actions[idx] is not None:
+                if isinstance(self.action_space, (spaces.Discrete, spaces.MultiDiscrete)):
+                    actions[idx] = np.array(actions[idx], dtype=np.int32)
+                    actions[idx] = actions[idx].reshape(self.single_action_space.shape)
+                obs, reward, terminated, truncated, info = self.env[idx].step(actions[idx])
+            else:
+                continue
+
+            obs_batch.append(obs)
+            reward_batch.append(reward)
+            terminated_batch.append(terminated)
+            truncated_batch.append(truncated)
+            info_batch.append(info)
+
+        return (
+            np.array(obs_batch),
+            np.array(reward_batch, dtype=np.float32),
+            np.array(terminated_batch, dtype=bool),
+            np.array(truncated_batch, dtype=bool),
+            info_batch,
+        )
+        
     def close(self):
-        if isinstance(self.env, list):
-            for e in self.env:
-                e.close()
+        if self.is_vectorized:
+            for env in self.env:
+                env.close()
         else:
             self.env.close()
     

@@ -36,6 +36,8 @@ class EnvAPI:
         self.msg_print_interval = 100
         self.max_print_length = 200
         print("Connecting to Remote RL server..., ", remote_rl_server_url)
+        self.silence = 0
+        self.silence_threshold = 30
         self.patience = 120
         self.patience_threshold = 120
         self.num_slices = 1
@@ -48,12 +50,13 @@ class EnvAPI:
         if self.ws:
             print("Closing WebSocket connection.")
             self.ws.close()
-        for env_key in list(self.environments.keys()):
-            self.environments[env_key].close()  
-            del self.environments[env_key]
+        for env in self.environments.values():
+            env.close()
+        self.environments.clear()
     
     def check_alive(self):
         self.patience += 1
+        self.silence += 1
         if self.patience > self.patience_threshold:
             heartbeat_message = (
                 f"No training activity detected. Environment {self.env_idx} is still online and waiting..."
@@ -79,7 +82,6 @@ class EnvAPI:
             except Exception as e:
                 logging.exception("WebSocket receiving error: %s", e)
                 continue
-
             try:
                 if packed_request.count(':') == 3:
                     slice_idx, total_slices, method, slice_data = packed_request.split(':', 3)
@@ -103,8 +105,12 @@ class EnvAPI:
                 data = payload.get("data", {})
                 
                 data_str = repr(data)
-                if len(data_str) > self.max_print_length:
-                    data_str = data_str[:self.max_print_length] + " ... [truncated]"
+                
+                is_too_long = len(data_str) > self.max_print_length
+                is_too_silent = self.silence > self.silence_threshold
+                if is_too_long or is_too_silent:
+                    data_str = "exceed_silence_threshold: " + data_str[:self.max_print_length] + " ... [truncated]"                
+                self.silence = 0
 
                 if self.cnt_msg % self.msg_print_interval == 0:
                     print(
@@ -208,6 +214,12 @@ class EnvAPI:
         return replace_nans_infs(space_to_dict(self.environments[env_key].observation_space))
 
     def close(self, env_key: str):
+        if env_key is None:
+            for env in self.environments.values():
+                env.close()
+            self.environments.clear()
+            return {"message": f"All environments closed with unmatched key {env_key}."}
+        
         if env_key in self.environments:
             self.environments[env_key].close()
             del self.environments[env_key]
