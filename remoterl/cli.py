@@ -185,7 +185,7 @@ def simulate(
     default_region = region or user_region   
     
     env_type = env_type or typer.prompt("Please provide the environment type ('gym' or 'unity')", default="gym")
-    env = env or typer.prompt("Please provide the environment name (e.g., 'Walker2d-v5')", default="Walker2d-v5")
+    env = env or typer.prompt("Please provide the environment name (e.g., 'Humanoid-v5')", default="Humanoid-v5")
     num_envs_per_env_runner = num_envs_per_env_runner or typer.prompt("Please provide the number of agents", type=int, default=64)
     num_env_runners = num_env_runners or typer.prompt("Please provide the number of parallel environments between 1~8", type=int, default=4)
     region = region or typer.prompt(

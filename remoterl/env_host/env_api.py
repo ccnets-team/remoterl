@@ -18,15 +18,10 @@ from ..utils.conversion_utils import (
     replace_nans_infs,
     space_to_dict,
 )
-
-def default(o):
-    if isinstance(o, (np.int64, np.int32)):
-        # Convert to float first then to int
-        return int(float(o))
-    elif isinstance(o, np.float64):
-        return float(o)
-    # Add additional conversions if needed.
-    raise TypeError(f"Unserializable object {o} of type {type(o)}")
+from ..utils.message_utils import (
+    default, 
+    slice_data,
+)
 
 WEBSOCKET_TIMEOUT = 1
 class EnvAPI:
@@ -38,11 +33,12 @@ class EnvAPI:
         self.shutdown_event = threading.Event()
         self.ws = websocket.WebSocket()
         self.cnt_msg = 0
-        self.msg_print_interval = 200
+        self.msg_print_interval = 100
         self.max_print_length = 200
         print("Connecting to Remote RL server..., ", remote_rl_server_url)
         self.patience = 120
         self.patience_threshold = 120
+        self.num_slices = 1
         self.ws.connect(remote_rl_server_url)
         self.ws.settimeout(WEBSOCKET_TIMEOUT)
         
@@ -68,27 +64,44 @@ class EnvAPI:
             self.patience = 0         
               
     def communicate(self):
+        message_buffer = {}
+
         while not self.shutdown_event.is_set():
             try:
                 packed_request = self.ws.recv()
                 self.patience = 0
             except (socket.timeout, WebSocketTimeoutException):
                 self.check_alive()
-                continue  # Silently continue without logging
+                continue
             except WebSocketConnectionClosedException:
                 logging.warning("WebSocket connection closed by server.")
                 break
             except Exception as e:
                 logging.exception("WebSocket receiving error: %s", e)
                 continue
+
             try:
-                # Unpack received request payload
-                payload = self.unpack_request(packed_request)
+                if packed_request.count(':') == 3:
+                    slice_idx, total_slices, method, slice_data = packed_request.split(':', 3)
+                    slice_idx = int(slice_idx)
+                    total_slices = int(total_slices)
+
+                    if method not in message_buffer:
+                        message_buffer[method] = [None] * total_slices
+
+                    message_buffer[method][slice_idx] = slice_data
+
+                    if None in message_buffer[method]:
+                        continue  # Wait for all slices
+
+                    complete_packed = ''.join(message_buffer[method])
+                    del message_buffer[method]  # Clear buffer after completion
+                else:
+                    complete_packed = packed_request
+                payload = self.unpack_request(complete_packed)
                 
                 data = payload.get("data", {})
-                method = data.get("method")
-                env_key = data.get("env_key")
-                # Convert data to string and truncate if too long.
+                
                 data_str = repr(data)
                 if len(data_str) > self.max_print_length:
                     data_str = data_str[:self.max_print_length] + " ... [truncated]"
@@ -97,15 +110,18 @@ class EnvAPI:
                     print(
                         f"[Msg {self.cnt_msg:05d}] Received request:\n"
                         f"    Method : {method}\n"
+                        f"    Num Msg Slices: {self.num_slices}\n"
                         f"    Data   : {data_str}"
                     )
-                self.cnt_msg += 1
-
+                self.cnt_msg += 1                
+                
+                method = data.get("method")
+                env_key = data.get("env_key")
                 # Execute method based on request
                 if method == "make":
                     result = self.make(env_key, data.get("env_id"), data.get("render_mode"))
                 elif method == "make_vec":
-                    result = self.make_vec(env_key, data.get("env_id"), int(data.get("num_envs", 1)))
+                    result = self.make_vec(env_key, data.get("env_id"), data.get("num_envs"))
                 elif method == "reset":
                     result = self.reset(env_key, data.get("seed"), data.get("options"))
                 elif method == "step":
@@ -118,14 +134,21 @@ class EnvAPI:
                     result = self.action_space(env_key)
                 else:
                     result = self.send_message("event", message=f"Unknown method: {method}")
-                packed_response = self.pack_response(result)
-                self.ws.send(packed_response)
+                    
+                self.send_response(result, method)
 
             except Exception as e:
                 logging.exception("Error processing message: %s", e)
                 self.send_message("event", message=f"Internal server error: {str(e)}", type="error")
                 continue
 
+    def send_response(self, result, method):
+        packed = self.pack_response(result)
+        slices = slice_data(packed, method)
+        self.num_slices = len(slices)
+        for i, data_slice in enumerate(slices):
+            self.ws.send(data_slice)
+            
     def pack_response(self, result):
         packed = msgpack.packb(result, use_bin_type=True, default=default)
         packed_response = base64.b64encode(packed).decode('utf-8')
