@@ -11,13 +11,12 @@ import re
 import yaml
 from .cloud_trainer import CloudTrainer
 from .config.sagemaker import SageMakerConfig
-from .config.rllib import RemoteRLlibConfig
 from typing import Optional, Dict
-import requests 
 
 from .utils.config_utils import load_config, save_config, generate_default_section_config, update_config_using_method, ensure_config_exists
 from .utils.config_utils import convert_to_objects, parse_extra_args, update_config_by_dot_notation
-from .utils.config_utils import DEFAULT_CONFIG_PATH, TOP_CONFIG_CLASS_MAP
+from .utils.aws_utils import _validate_sagemaker_role_arn, _ensure_s3_output_path, register_beta_access
+from .utils.config_utils import DEFAULT_CONFIG_PATH, TOP_CONFIG_CLASS_KEYS
 
 app = typer.Typer(add_completion=False, invoke_without_command=True)
 
@@ -111,7 +110,7 @@ def clear_config(
         None,
     )
 ):
-    allowed_sections = set(TOP_CONFIG_CLASS_MAP.keys())
+    allowed_sections = set(TOP_CONFIG_CLASS_KEYS)
     if section:
         ensure_config_exists()
         if section not in allowed_sections:
@@ -141,7 +140,7 @@ def list_config(
     ensure_config_exists()
     
     current_config = load_config()
-    if section in TOP_CONFIG_CLASS_MAP.keys():
+    if section in TOP_CONFIG_CLASS_KEYS:
         # Retrieve the specified section and print its contents directly.
         if section not in current_config:
             typer.echo(f"No configuration found for section '{section}'.")
@@ -150,17 +149,15 @@ def list_config(
         typer.echo(yaml.dump(current_config[section], default_flow_style=False, sort_keys=False))
     else:
         typer.echo("Current configuration:")
-        for sec in TOP_CONFIG_CLASS_MAP.keys():
+        for sec in TOP_CONFIG_CLASS_KEYS:
             if sec in current_config:
                 if sec == "rllib":
-                    typer.echo("RLlib: (Showing only modified configuration)")
+                    typer.echo("**RLlib(modification)**: ")
                 elif sec == "sagemaker":
                     typer.echo("**SageMaker**: ")
                 else:
                     typer.echo(f"**{sec}**:")
                 typer.echo(yaml.dump(current_config[sec], default_flow_style=False, sort_keys=False))
-
-# Define a function to poll for config changes.
 
 @app.command(
     "simulate",
@@ -207,7 +204,7 @@ def simulate(
         "num_envs": num_env_runners,
     }
 
-    from .utils.remote_utils import connect_to_remote_rl_server
+    from .utils.simulation_utils import connect_to_remote_rl_server
     remote_rl_server_url, remote_training_key = connect_to_remote_rl_server(region, env_config)
 
     # Initial args as list (command-line-style)
@@ -229,7 +226,7 @@ def simulate(
     from .local_simulator import launch_simulator
     simulation_terminal = launch_simulator(extra_args)
     try:
-        from .utils.remote_utils import wait_for_config_update
+        from .utils.simulation_utils import wait_for_config_update
         updated_config = wait_for_config_update(remote_training_key, timeout=10)
         remote_training_key = updated_config.get("rllib", {}).get("remote_training_key", {})
         typer.echo("Remote Training Key for simulation updated successfully:")
@@ -240,86 +237,6 @@ def simulate(
         typer.echo("Configuration update timed out. Terminating simulation process.")
         simulation_terminal.terminate()
         simulation_terminal.wait()
-
-def register_beta_access(
-    role_arn: str,
-    region: str,
-    email: Optional[str] = None
-) -> bool:
-    """
-    Register your AWS account details for beta access to the service.
-
-    - Validates the role ARN format.
-    - Extracts your AWS account ID from the role ARN.
-    - Sends the account ID, region, and service type to the beta registration endpoint.
-
-    Returns True on successful registration; otherwise, returns False.
-    """
-    try:
-        # Validate the role ARN format.
-        if not re.match(r"^arn:aws:iam::\d{12}:role/[\w+=,.@-]+$", role_arn):
-            raise ValueError("Invalid role ARN format.")
-
-        # Extract the account ID from the role ARN.
-        parts = role_arn.split(":")
-        if len(parts) < 5 or not parts[4]:
-            raise ValueError("Invalid role ARN. Unable to extract account ID.")
-        account_id = parts[4]
-
-        typer.echo("Registering beta access...")
-
-        beta_register_url = "https://agentgpt-beta.ccnets.org"
-        payload = {
-            "clientAccountId": account_id,
-            "region": region,
-            "serviceType": "remoterl"
-        }
-        if email:
-            payload["Email"] = email
-
-        headers = {'Content-Type': 'application/json'}
-
-        # Send the registration request.
-        response = requests.post(beta_register_url, json=payload, headers=headers)
-        if response.status_code != 200:
-            raise ValueError("Registration failed.")
-
-        typer.echo("Registration succeeded.")
-        return True
-
-    except Exception as e:
-        typer.echo(typer.style(str(e), fg=typer.colors.YELLOW))
-        return False
-
-def _validate_sagemaker_role_arn(role_arn: str) -> None:
-    """
-    Validate SageMaker role ARN.
-    Raises ValueError if invalid.
-    """
-    if not role_arn:
-        raise ValueError("Role ARN cannot be empty.")
-
-    arn_regex = r"^arn:aws:iam::\d{12}:role\/[\w+=,.@\-_\/]+$"
-    if not re.match(arn_regex, role_arn):
-        raise ValueError(f"Invalid SageMaker role ARN: {role_arn}")
-
-def _ensure_s3_output_path(output_path: str) -> str:
-    """
-    Ensure the provided output path starts with 's3://'.
-    Strips leading/trailing whitespace and any trailing slashes,
-    and prepends 's3://' if necessary.
-    Raises a ValueError if the input is empty.
-    """
-    output_path = output_path.strip()
-    if not output_path:
-        raise ValueError("Output path cannot be empty.")
-    
-    output_path = output_path.rstrip('/')
-    
-    if not output_path.startswith("s3://"):
-        return "s3://" + output_path.lstrip('/')
-    
-    return output_path
 
 @app.command(
     "train",
@@ -363,7 +280,6 @@ def train():
             break
         except ValueError as e:
             typer.echo(f"Error: {e}")
-            asked_role_arn = True
             role_arn = typer.prompt("Please enter a valid IAM role ARN for SageMaker access")
             config_data["sagemaker"]["role_arn"] = role_arn
             save_config(config_data)
@@ -396,16 +312,12 @@ def train():
     
     register_beta_access(role_arn, region, email)
     
-    input_config = {}
-    for name in ["sagemaker"] :
-        input_config[name] = config_data.get(name, {})
-    converted_obj = convert_to_objects(input_config)
-    sagemaker_obj: SageMakerConfig = converted_obj["sagemaker"]
-    hyperparameters = config_data["rllib"]
+    rllib_dict = config_data.get("rllib", {})
+    sagemaker_dict = config_data.get("sagemaker", {})
     
     typer.echo("Submitting training job...")
     
-    estimator = CloudTrainer.train(sagemaker_obj, hyperparameters)
+    estimator = CloudTrainer.train(sagemaker_dict, rllib_dict)
     
     typer.echo(f"Training job submitted: {estimator.latest_training_job.name}")
 

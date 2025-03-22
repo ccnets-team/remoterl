@@ -36,7 +36,7 @@ def wait_for_config_update(sent_remote_training_key, timeout=10):
         time.sleep(0.5)
     raise TimeoutError("Timed out waiting for config update.")
 
-def do_simulation(env_type, env, num_envs_per_env_runner, num_env_runners, entry_point, env_dir, region):
+def launch_remote_rl_simulation(env_type, env, num_envs_per_env_runner, num_env_runners, entry_point, env_dir, region):
     env_config = {
         "env_id": env,
         "num_envs": num_env_runners,

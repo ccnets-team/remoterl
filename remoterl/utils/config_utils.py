@@ -2,17 +2,17 @@ import os
 import yaml
 from typing import List, Dict
 
-from ..config.rllib import RemoteRLlibConfig
-from ..config.sagemaker import SageMakerConfig
+from ..remote_config import RemoteConfig
 
 from remoterl import __version__ as CURRENT_REMOTE_RL_VERSION
 
 DEFAULT_CONFIG_PATH = os.path.expanduser("~/.remoterl/config.yaml")
 
-TOP_CONFIG_CLASS_MAP = {
-    "rllib": RemoteRLlibConfig,
-    "sagemaker": SageMakerConfig,
-}
+TOP_CONFIG_CLASS_KEYS = ["rllib", "sagemaker"]
+# TOP_CONFIG_CLASS_MAP = {
+#     "rllib": RemoteConfig,
+#     "sagemaker": SageMakerConfig,
+# }
 
 def load_config() -> Dict:
     config = {}    
@@ -26,13 +26,10 @@ def save_config(config_data: Dict) -> None:
         yaml.dump(config_data, f, sort_keys=False, default_flow_style=False)
 
 def generate_default_section_config(section: str) -> Dict:
-    cls = TOP_CONFIG_CLASS_MAP.get(section)
-    if cls:
-        return cls().to_dict()
-    return {}
+    return RemoteConfig().to_dict().get(section)
 
 def generate_default_config() -> Dict:
-    return { section: generate_default_section_config(section) for section in TOP_CONFIG_CLASS_MAP.keys() }
+    return RemoteConfig().to_dict()
 
 def ensure_config_exists():
     os.makedirs(os.path.dirname(DEFAULT_CONFIG_PATH), exist_ok=True)
@@ -49,12 +46,9 @@ def convert_to_objects(config_data: Dict) -> Dict:
     """
     Instantiate top-level configuration objects and apply stored config_data.
     """
-    result = {}
-    for key, cls in TOP_CONFIG_CLASS_MAP.items():
-        obj = cls()  # __post_init__ in NetworkConfig will fetch network info automatically.
-        obj.set_config(**config_data.get(key, {}))
-        result[key] = obj
-    return result
+    remote_config = RemoteConfig()
+    remote_config.set_config(**config_data)
+    return remote_config
 
 def parse_value(value: str):
     """

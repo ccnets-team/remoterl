@@ -78,7 +78,7 @@ def main():
         if env_type == "gym":
             from remoterl.wrappers.gym_env import GymEnv
             GymEnv.register(env_id, entry_point)
-        elif env_type == "custom_gym":
+        elif env_type == "rllib":
             from remoterl.remote_tune import RLlibEnv
             RLlibEnv.register(env_id, entry_point)
     elif env_dir:

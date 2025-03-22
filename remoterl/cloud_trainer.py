@@ -17,32 +17,34 @@ logging.getLogger("boto3").setLevel(logging.WARNING)
 logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
 
 from sagemaker.estimator import Estimator
-from .config.sagemaker import SageMakerConfig
+from .config.sagemaker import get_image_uri
 
 class CloudTrainer:
     def __init__(self):
         pass
         
     @staticmethod
-    def train(sagemaker_config: SageMakerConfig, hyperparameters: dict):
+    def train(sagemaker_dict: dict, rllib_dict: dict):
+        role_arn = sagemaker_dict.get("role_arn")
+        output_path = sagemaker_dict.get("output_path")
+        region = sagemaker_dict.get("region")
+        instance_type = sagemaker_dict.get("instance_type", "ml.g5.4xlarge")
+        instance_count = sagemaker_dict.get("instance_count", 1)
+        max_run = sagemaker_dict.get("max_run", 3600)
+        if not role_arn or not output_path or not region:
+            raise ValueError("Invalid SageMaker configuration: Please provide a valid role_arn, output_path, and region.")
         
-        # Check for default output_path
-        if sagemaker_config.output_path == sagemaker_config.DEFAULT_OUTPUT_PATH:
-            raise ValueError("Invalid output_path: Please update the SageMaker output_path to a valid S3 location.")
-        if sagemaker_config.region == sagemaker_config.DEFAULT_REGION:
-            raise ValueError("Invalid region: Please update the SageMaker region to a valid AWS region.")
-        
-        image_uri = sagemaker_config.get_image_uri()
+        image_uri = get_image_uri(region)
 
         estimator = Estimator(
             image_uri=image_uri,
-            role=sagemaker_config.role_arn,
-            instance_type=sagemaker_config.instance_type,
-            instance_count=sagemaker_config.instance_count,
-            output_path=sagemaker_config.output_path,
-            max_run=sagemaker_config.max_run,
-            region=sagemaker_config.region,
-            hyperparameters=hyperparameters
+            role=role_arn,
+            instance_type=instance_type,
+            instance_count=instance_count,
+            output_path=output_path,
+            max_run=max_run,
+            region=region,
+            hyperparameters=rllib_dict
         )
         estimator.fit()
         return estimator
