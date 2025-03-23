@@ -129,8 +129,8 @@ class RemoteConfig():
         entry_point = self._rllib.entry_point
         
         remote_training_key = launch_remote_rl_simulation(env, num_env_runners, num_envs_per_env_runner, entry_point, final_region)
+        self._rllib.remote_training_key = remote_training_key
         
-        self.remote_training_key = remote_training_key
         return remote_training_key
     
     def train(self):
