@@ -1,17 +1,12 @@
 import os
 import yaml
+import time
 from typing import List, Dict
-
 
 from remoterl import __version__ as CURRENT_REMOTE_RL_VERSION
 
 DEFAULT_CONFIG_PATH = os.path.expanduser("~/.remoterl/config.yaml")
-
 TOP_CONFIG_CLASS_KEYS = ["rllib", "sagemaker"]
-# TOP_CONFIG_CLASS_MAP = {
-#     "rllib": RemoteConfig,
-#     "sagemaker": SageMakerConfig,
-# }
 
 def load_config() -> Dict:
     config = {}    
@@ -24,6 +19,22 @@ def save_config(config_data: Dict) -> None:
     with open(DEFAULT_CONFIG_PATH, "w", encoding="utf-8") as f:
         yaml.dump(config_data, f, sort_keys=False, default_flow_style=False)
 
+def wait_for_config_update(sent_remote_training_key, timeout=10):
+    start_time = time.time()
+    from .config import load_config
+    while time.time() - start_time < timeout:
+        config_data = load_config()  # Your function to load the config file.
+        registered_remote_training_key = config_data.get("rllib", {}).get("remote_training_key")
+        if sent_remote_training_key == registered_remote_training_key:
+            return config_data
+        time.sleep(0.5)
+    raise TimeoutError("Timed out waiting for config update.")
+
+def get_nested_config(config, *keys, default=None):
+    for key in keys:
+        config = config.get(key, {})
+    return config or default
+    
 from ..remote_config import RemoteConfig
 def generate_default_section_config(section: str) -> Dict:
     return RemoteConfig().to_dict().get(section)
@@ -46,9 +57,9 @@ def convert_to_objects(config_data: Dict) -> Dict:
     """
     Instantiate top-level configuration objects and apply stored config_data.
     """
-    remote_config = RemoteConfig()
-    remote_config.set_config(**config_data)
-    return remote_config
+    new_config = RemoteConfig()
+    new_config.set_config(**config_data)
+    return new_config
 
 def parse_value(value: str):
     """

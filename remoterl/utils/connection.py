@@ -1,8 +1,33 @@
 
-from typing import Optional
-import re
+from typing import Optional, Dict
 import requests
 import typer
+import re
+import json
+import websocket
+
+def get_remote_rl_server_url(region: str) -> str:
+    if region not in ["us-east-1", "ap-northeast-2"]:
+        raise ValueError(f"Invalid region: {region}")
+    remote_rl_server_url = f"wss://{region}.ccnets.org"
+    return remote_rl_server_url
+
+def connect_to_remote_rl_server(region: str, env_config: Dict) -> str:
+
+    remote_rl_server_url = get_remote_rl_server_url(region)
+    
+    ws = websocket.WebSocket()
+    ws.connect(remote_rl_server_url)
+    
+    register_request = json.dumps({
+        "action": "register", 
+        "data": env_config
+    })
+    ws.send(register_request)
+    remote_training_key = ws.recv()
+    ws.close()      
+    
+    return remote_rl_server_url, remote_training_key
 
 def register_beta_access(
     role_arn: str,
@@ -54,7 +79,7 @@ def register_beta_access(
         typer.echo(typer.style(str(e), fg=typer.colors.YELLOW))
         return False
 
-def _validate_sagemaker_role_arn(role_arn: str) -> None:
+def validate_sagemaker_role_arn(role_arn: str) -> None:
     """
     Validate SageMaker role ARN.
     Raises ValueError if invalid.
@@ -66,7 +91,7 @@ def _validate_sagemaker_role_arn(role_arn: str) -> None:
     if not re.match(arn_regex, role_arn):
         raise ValueError(f"Invalid SageMaker role ARN: {role_arn}")
 
-def _ensure_s3_output_path(output_path: str) -> str:
+def ensure_s3_output_path(output_path: str) -> str:
     """
     Ensure the provided output path starts with 's3://'.
     Strips leading/trailing whitespace and any trailing slashes,

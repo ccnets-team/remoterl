@@ -6,11 +6,8 @@ config:
     This command supports two modes for modifying configuration:
 
     For example:
-    remoterl config --batch_size 64 --lr_init 0.0005 --env CartPole-v1
-    remoterl config --max_run 360
-
-    This mode updates any key in the top-level configuration (such as: rllib, sagemaker)
-    without requiring dedicated subcommands.
+    remoterl config --role-arn arn:aws:iam::123456789012:role/service-role/SageMakerExecutionRole
+    remoterl config --max-run 3600
 
     Choose Field Update Mode for simple, direct key modifications and Method Mode for more guided, complex configuration changes.
 

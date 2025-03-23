@@ -1,4 +1,5 @@
-# env_wrapper/gym_env.py
+# wrappers/gym_env.py
+# this method is decprecated
 import gymnasium as gym
 
 class GymEnv:

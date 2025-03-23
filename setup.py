@@ -10,10 +10,7 @@ with open("requirements.txt", encoding="utf-8") as f:
 # Additional dependencies not in the file
 cli_dependencies = [
     "typer",
-    "websocket-client",
     "pyyaml",
-    "boto3",
-    "sagemaker",
 ]
 
 # Combine the two lists
@@ -21,7 +18,7 @@ install_requires = env_requirements + cli_dependencies
 
 setup(
     name="remoterl",
-    version="0.2.7",
+    version="1.0.0",
     packages=find_packages(), 
     include_package_data=True,
     package_data={
@@ -29,13 +26,10 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "remoterl=remoterl.cli:app",
+            "remoterl=remoterl.cli.cli:app",
         ],
     },
     install_requires=install_requires,
-    extras_require={
-         "mlagents": ["mlagents_envs==0.30.0", "protobuf==3.20.0"],
-    },        
     author="JunHo Park",
     author_email="junho@ccnets.org",
     url="https://github.com/ccnets-team/remoterl",

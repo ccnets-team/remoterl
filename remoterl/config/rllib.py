@@ -1,6 +1,10 @@
-from typing import Optional, Dict, Any
+import gymnasium
+gymnasium.logger.min_level = gymnasium.logger.WARN
+gymnasium.logger.warn = lambda *args, **kwargs: None
+
 from ray.rllib.algorithms.algorithm_config import AlgorithmConfig, NotProvided
 from ray.tune.registry import get_trainable_cls  # Assumes you have a function to get trainable classes
+from typing import Optional, Dict, Any
 
 def extract_modified_config(selected_config, base_config):
     # Create a new dictionary with keys whose values differ or don't exist in the base_config.
@@ -17,8 +21,6 @@ class RLlibConfig(AlgorithmConfig):
         self.trainable_name = None
                
         self.remote_training_key = None
-        self.env_type = None 
-        self.env_id = None
         self.entry_point = None
         self.env_dir = None 
         

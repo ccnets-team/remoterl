@@ -1,22 +1,17 @@
-import gymnasium
-# Set the Gymnasium logger to only show errors
-gymnasium.logger.min_level = gymnasium.logger.WARN
-# Override the warn method so that warnings are not printed
-gymnasium.logger.warn = lambda *args, **kwargs: None
-
+from typing import Optional, Dict
 import typer
+import yaml
 import os
 import re
 
-import yaml
-from .cloud_trainer import CloudTrainer
-from .config.sagemaker import SageMakerConfig
-from typing import Optional, Dict
+from ..core.cloud_trainer import CloudTrainer
+from ..config.sagemaker import SageMakerConfig
 
-from .utils.config_utils import load_config, save_config, generate_default_section_config, update_config_using_method, ensure_config_exists
-from .utils.config_utils import convert_to_objects, parse_extra_args, update_config_by_dot_notation
-from .utils.aws_utils import _validate_sagemaker_role_arn, _ensure_s3_output_path, register_beta_access
-from .utils.config_utils import DEFAULT_CONFIG_PATH, TOP_CONFIG_CLASS_KEYS
+from ..utils.connection import validate_sagemaker_role_arn, ensure_s3_output_path, register_beta_access
+from .config import load_config, save_config
+from .config import generate_default_section_config, update_config_using_method, ensure_config_exists
+from .config import convert_to_objects, parse_extra_args, update_config_by_dot_notation
+from .config import DEFAULT_CONFIG_PATH, TOP_CONFIG_CLASS_KEYS
 
 app = typer.Typer(add_completion=False, invoke_without_command=True)
 
@@ -165,10 +160,10 @@ def list_config(
     help=auto_format_help(help_texts["simulate"]["detailed_help"]),
 )
 def simulate(
-    env_type: Optional[str] = typer.Option(None, "--env-type", help="Environment type: 'gym', 'unity', 'rllb'"),
     env: Optional[str] = typer.Option(None, "--env", help="Environment name to simulate, e.g., 'Walker2d-v5'"),
     num_env_runners: Optional[int] = typer.Option(None, "--num-env-runners", help="Number of parallel environments"),
     num_envs_per_env_runner: Optional[int] = typer.Option(None, "--num-envs-per-env-runner", help="Number of envs per worker to simulate and train (1-8)"),
+    entry_point: Optional[str] = typer.Option(None, "--entry-point", help="Entry point for the environment"),
     region: Optional[str] = typer.Option(None, "--region", help="AWS region for simulation/training"),
 ):
     ensure_config_exists()
@@ -181,7 +176,6 @@ def simulate(
     
     default_region = region or user_region   
     
-    env_type = env_type or typer.prompt("Please provide the environment type ('rllib', 'gym', 'unity')", default="rllib")
     env = env or typer.prompt("Please provide the environment name (e.g., 'Humanoid-v5')", default="Humanoid-v5")
     num_envs_per_env_runner = num_envs_per_env_runner or typer.prompt("Please provide the number of agents", type=int, default=64)
     num_env_runners = num_env_runners or typer.prompt("Please provide the number of parallel environments between 1~8", type=int, default=4)
@@ -190,13 +184,14 @@ def simulate(
         default=default_region
     )
     
-    typer.echo(f"Environment type: {env_type}")
     typer.echo(f"Environment ID: {env}")
     typer.echo(f"Number of envs per worker: {num_envs_per_env_runner}")
     typer.echo(f"Number of parallel environments: {num_env_runners}")
     typer.echo(f"AWS region: {region}")
 
-    configs["sagemaker"]["region"] = region
+    configs["sagemaker"].update({
+        "region": region,
+    })
     save_config(configs)
         
     env_config = {
@@ -204,13 +199,17 @@ def simulate(
         "num_envs": num_env_runners,
     }
 
-    from .utils.simulation_utils import connect_to_remote_rl_server
+    from ..utils.connection import connect_to_remote_rl_server
     remote_rl_server_url, remote_training_key = connect_to_remote_rl_server(region, env_config)
-    
-    configs["rllib"]["env_type"] = env_type
-    configs["rllib"]["env"] = env
-    configs["rllib"]["num_env_runners"] = num_env_runners
-    configs["rllib"]["num_envs_per_env_runner"] = num_envs_per_env_runner
+        
+    # Update RLlib-specific configurations clearly
+    configs["rllib"].update({
+        "env": env,
+        "num_env_runners": num_env_runners,
+        "num_envs_per_env_runner": num_envs_per_env_runner,
+        "entry_point": entry_point,
+        "env_dir": None,
+    })
     
     save_config(configs)
 
@@ -220,19 +219,13 @@ def simulate(
         "--remote_rl_server_url", remote_rl_server_url,
     ]
 
-        # # Dynamically add other args from env_config
-        # for key, value in env_config.items():
-        #     if value is not None:
-        #         extra_args.extend([f"--{key}", str(value)])
-
     typer.echo("Starting the simulation in a separate terminal window. Please monitor that window for real-time logs.")
-    from .local_simulator import launch_simulator
+    from ..core.local_simulator import launch_simulator
     simulation_terminal = launch_simulator(extra_args)
     try:
-        from .utils.simulation_utils import wait_for_config_update
+        from .config import wait_for_config_update
         updated_config = wait_for_config_update(remote_training_key, timeout=10)
         remote_training_key = updated_config.get("rllib", {}).get("remote_training_key", {})
-        typer.echo("Remote Training Key for simulation updated successfully:")
         dislay_output = "**Remote Training Key Under**\n" + yaml.dump(remote_training_key, default_flow_style=False, sort_keys=False)
         typer.echo(typer.style(dislay_output.strip(), fg=typer.colors.GREEN))
         typer.secho("Simulation is now running. Please run 'remoterl train' to continue..", fg="green")
@@ -279,7 +272,7 @@ def train():
     # Validate role ARN and re-prompt until valid.
     while True:
         try:
-            _validate_sagemaker_role_arn(role_arn)
+            validate_sagemaker_role_arn(role_arn)
             break
         except ValueError as e:
             typer.echo(f"Error: {e}")
@@ -300,7 +293,7 @@ def train():
             typer.echo("Warning: Default output path detected. Please enter a valid S3 path.")
             continue
         try:
-            s3_output_path = _ensure_s3_output_path(output_path)
+            s3_output_path = ensure_s3_output_path(output_path)
             config_data["sagemaker"]["output_path"] = s3_output_path
             save_config(config_data)            
             break  # Valid input; exit loop.

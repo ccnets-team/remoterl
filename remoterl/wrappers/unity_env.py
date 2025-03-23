@@ -1,3 +1,4 @@
+# this method is decprecated
 import numpy as np
 from gymnasium import Env
 from gymnasium import spaces

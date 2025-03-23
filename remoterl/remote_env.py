@@ -1,9 +1,43 @@
-import copy
 import gymnasium as gym
-from ray.rllib.env import MultiAgentEnv
+import copy
+
 from ray.rllib.env.env_context import EnvContext
+from ray.rllib.env import MultiAgentEnv
 
 class RemoteMultiAgentEnv(MultiAgentEnv):
+    """
+    RemoteMultiAgentEnv is a wrapper around Gymnasium environments specifically designed for
+    remote reinforcement learning training with Ray RLlib.
+
+    It manages multiple Gymnasium environment instances concurrently, representing each instance
+    as a distinct agent within a single RLlib-compatible multi-agent environment. This structure
+    facilitates parallel environment interaction, significantly simplifying distributed
+    reinforcement learning training.
+
+    RemoteMultiAgentEnv provides native integration with RLlib's MultiAgentEnv API, allowing
+    streamlined deployment and efficient remote training on cloud platforms, including AWS SageMaker.
+
+    Args:
+        config (EnvContext, optional): RLlib's environment context providing configurations.
+            - num_envs (int): Number of parallel environment instances to create.
+            - env (str): The Gymnasium environment ID (e.g., "CartPole-v1").
+
+    Methods:
+        reset(seed=None, options=None):
+            Reset all managed environments.
+
+        step(action_dict):
+            Execute a step in each environment based on the provided actions.
+
+        close():
+            Close all managed environments.
+
+        make(env_id):
+            Class method to create a single environment instance.
+
+        make_vec(env_id, num_envs):
+            Class method to create a vectorized multi-environment instance.
+    """    
     def __init__(self, config: EnvContext = None):
         super().__init__()
 

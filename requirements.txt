@@ -1,5 +1,8 @@
 # requirements.txt
 
+websocket-client
+boto3
+sagemaker
 msgpack
 requests
 gymnasium>=1.0.0

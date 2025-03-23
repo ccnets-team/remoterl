@@ -1,25 +1,47 @@
-from typing import Optional, Dict, Any
+from typing import Any, Callable, Dict, Optional
+
 from ray.rllib.algorithms.algorithm_config import AlgorithmConfig, NotProvided
-from .config.sagemaker import SageMakerConfig
-from .cloud_trainer import CloudTrainer
-from .utils.simulation_utils import launch_remote_rl_simulation  # Assumes you have a simulation utility
+
+from .core.cloud_trainer import CloudTrainer
+from .core.local_simulator import launch_remote_rl_simulation
 from .config.rllib import RLlibConfig
-from typing import Callable
+from .config.sagemaker import SageMakerConfig
 
 class RemoteConfig():
     """
-    RemoteRL provides a user-friendly interface to bridge local RLlib configurations
-    with cloud-based training on SageMaker. It separates the concerns of algorithm 
-    configuration and cloud deployment settings, enabling a smooth workflow:
+    RemoteConfig provides a high-level wrapper for Ray RLlib algorithm configurations and SageMaker deployment settings,
+    enabling easy management and deployment of remote reinforcement learning training jobs on AWS SageMaker.
 
-      1. Initialize with an RLlib configuration or update it later.
-      2. Run a simulation to obtain a remote training key for cloud integration.
-      3. Configure SageMaker deployment parameters when ready to train.
-      4. Launch training on SageMaker using the consolidated configuration.
+    This class streamlines the workflow between local RLlib algorithm tuning, environment simulation 
+    connected to our web server, and remote training job launching. 
+    Users can configure RLlib and SageMaker settings separately, run local simulations to validate configurations, 
+    and subsequently deploy cloud training jobs.
 
-    This design allows you to defer SageMaker-related settings until training time, 
-    keeping local development lightweight and focused on RL algorithm tuning.
+    Args:
+        config (Optional[AlgorithmConfig]): An initial RLlib AlgorithmConfig to set up the environment
+            and training configuration.
+
+    Methods:
+        sagemaker(role_arn, output_path, instance_type, instance_count, max_run, region):
+            Set or update SageMaker deployment configurations.
+
+        simulate(env, num_env_runners, num_envs_per_env_runner, region):
+            Run a local simulation to prepare and test remote training integration.
+
+        train():
+            Launch a SageMaker training job with the provided RLlib and SageMaker configurations.
+
+        to_dict():
+            Convert internal configurations to a dictionary format compatible with RLlib.
+
+        set_config(**kwargs):
+            Dynamically update internal RLlib and SageMaker configurations.
+
+        register_env(name, env_creator):
+            Register a custom environment with RLlib for remote training, corresponding to Ray's
+            `ray.tune.register_env` method.
     """
+
     def __init__(self, config: Optional[AlgorithmConfig] = None):
         # Accept an RLlib config at initialization or use a default.
         super().__init__()
@@ -63,7 +85,6 @@ class RemoteConfig():
     
     def simulate(
         self,
-        env_type = "rllib",
         env: str = NotProvided,
         num_env_runners: int = NotProvided,
         num_envs_per_env_runner: int = NotProvided,
@@ -76,7 +97,6 @@ class RemoteConfig():
         and generates a remote training key.
         
         Parameters:
-          - env_type: The type of environment (e.g., 'gym' or 'unity').
           - region: (Optional) AWS region; if not provided, defaults to the SageMaker region or 'us-east-1'.
         
         Returns:
@@ -103,15 +123,12 @@ class RemoteConfig():
         if env is NotProvided:
             env = self._rllib.env or "Walker2d-v5"
             
-        if env_type is NotProvided:
-            env_type = self._rllib.env_type or "rllib"
-            
         self._rllib.num_envs_per_env_runner = num_envs_per_env_runner
         self._rllib.num_env_runners = num_env_runners
         self._rllib.env = env
-        self._rllib.env_type = env_type
+        entry_point = self._rllib.entry_point
         
-        remote_training_key = launch_remote_rl_simulation()
+        remote_training_key = launch_remote_rl_simulation(env, num_env_runners, num_envs_per_env_runner, entry_point, final_region)
         
         self.remote_training_key = remote_training_key
         return remote_training_key
@@ -123,8 +140,8 @@ class RemoteConfig():
         Note: SageMaker parameters must be configured using `config_sagemaker()` prior to training.
         """
         config_dict = self.to_dict()
-        rllib_dict = config_dict.get("rllib", {})
         sagemaker_dict = config_dict.get("sagemaker", {})
+        rllib_dict = config_dict.get("rllib", {})
 
         results = self._trainer.train(sagemaker_dict, rllib_dict)
         return results
@@ -133,7 +150,7 @@ class RemoteConfig():
         """Returns a clean dictionary ready for RLlib."""
         rllib_dict = self._rllib.to_dict()
         sagemaker_dict = self._sagemaker.to_dict()
-        return {"rllib": rllib_dict, "sagemaker": sagemaker_dict}
+        return {"sagemaker": sagemaker_dict, "rllib": rllib_dict}
     
     def set_config(self, **kwargs):
         for k, v in kwargs.items():
@@ -145,15 +162,19 @@ class RemoteConfig():
                 print(f"Warning: No attribute '{k}' in RemoteConfig")
 
     def register_env(self, name: str, env_creator: Callable):
+        
         if not env_creator:
             print("Error: No environment creator provided.")    
-            return
+            return None
         try:
             env_instance = env_creator({})
         except Exception as e:
             print(f"Error: {e}")
             env_instance = env_creator()
+        
         entry_point = f"{env_instance.__class__.__module__}:{env_instance.__class__.__name__}"
+        
         self._rllib.entry_point = entry_point
-        self._rllib.env_id = name
+        self._rllib.env = name
+        
         print(f"Environment registered: {name} ({entry_point})")

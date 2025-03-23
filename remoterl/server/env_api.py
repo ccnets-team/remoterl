@@ -1,33 +1,34 @@
-from websocket._exceptions import WebSocketTimeoutException, WebSocketConnectionClosedException
-import numpy as np
-import logging
-import websocket
+# Standard library imports
+import base64
 import json
+import logging
 import socket
 import threading
-from typing import Optional, Any
+from typing import Any, Optional, Callable
+
+# Third-party library imports
 import msgpack
-import base64
+import numpy as np
+import websocket
+from websocket._exceptions import WebSocketConnectionClosedException, WebSocketTimeoutException
 
 # ------------------------------------------------
 # Utility imports
 # ------------------------------------------------
-from ..utils.conversion_utils import (
+from ..utils.message import (
     convert_ndarrays_to_nested_lists,
     convert_nested_lists_to_ndarrays,
     replace_nans_infs,
     space_to_dict,
-)
-from ..utils.message_utils import (
     default, 
     slice_data,
 )
 
 WEBSOCKET_TIMEOUT = 1
 class EnvAPI:
-    def __init__(self, env_wrapper, remote_training_key, remote_rl_server_url, 
+    def __init__(self, env_cls, remote_training_key, remote_rl_server_url, 
                env_idx, num_agents):
-        self.env_wrapper = env_wrapper
+        self.env_cls = env_cls
         self.environments = {}
         self.env_idx = env_idx
         self.shutdown_event = threading.Event()
@@ -181,12 +182,12 @@ class EnvAPI:
     # ----------------- Environment methods -----------------
 
     def make(self, env_key: str, env_id: str, render_mode: Optional[str] = None):
-        env_instance = self.env_wrapper.make(env_id, render_mode=render_mode)
+        env_instance = self.env_cls.make(env_id, render_mode=render_mode)
         self.environments[env_key] = env_instance
         return {"message": f"Environment {env_id} created.", "env_key": env_key}
 
     def make_vec(self, env_key: str, env_id: str, num_envs: int):
-        env_instance = self.env_wrapper.make_vec(env_id, num_envs=num_envs)
+        env_instance = self.env_cls.make_vec(env_id, num_envs=num_envs)
         self.environments[env_key] = env_instance
         return {"message": f"Vectorized environment {env_id} created.", "env_key": env_key}
 

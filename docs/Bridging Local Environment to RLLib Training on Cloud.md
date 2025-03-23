@@ -36,7 +36,7 @@ RemoteRL’s CLI makes it effortless to configure, simulate, and train:
     ```bash
     remoterl simulate
     ```
-    The CLI will prompt you for environment details (e.g., `env_type`, `env`, `num_env_runners`, `num_envs_per_env_runner`, `region`). These settings are sent to our WebSocket server, which then provides a unique training key to initiate a cloud training job.
+    The CLI will prompt you for environment details (e.g., `env`, `num_env_runners`, `num_envs_per_env_runner`, `region`). These settings are sent to our WebSocket server, which then provides a unique training key to initiate a cloud training job.
 
 3. **Train:**  
     Once your simulation is running, start your cloud training job:

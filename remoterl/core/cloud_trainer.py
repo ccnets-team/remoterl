@@ -1,11 +1,10 @@
 # remoterl/cloud_trainer.py
 ###############################################################################
-# RemoteRL: the main class for training and running an RL environment in SageMaker
+# RemoteRL: the main class for training in SageMaker
 ###############################################################################
 import warnings
 import logging
 
-# Suppress specific pydantic warning about the "json" field.
 warnings.filterwarnings(
     "ignore",
     message=r'Field name "json" in "MonitoringDatasetFormat" shadows an attribute in parent "Base"',
@@ -17,7 +16,7 @@ logging.getLogger("boto3").setLevel(logging.WARNING)
 logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
 
 from sagemaker.estimator import Estimator
-from .config.sagemaker import get_image_uri
+from ..config.sagemaker import get_image_uri
 
 class CloudTrainer:
     def __init__(self):

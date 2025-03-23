@@ -1,39 +1,40 @@
-"""
-This module provides utility functions for converting and transforming data structures
-for RemoteRL. It includes functions for:
 
-  1) Converting nested data structures between Python lists and NumPy arrays, which is useful for
-     HTTP/JSON serialization. These functions handle special float values (NaN, Infinity) and preserve
-     the original nested structure.
-     
-     - convert_nested_lists_to_ndarrays(data, dtype):
-         Recursively converts lists (and nested dicts/tuples) to NumPy arrays, preserving the structure
-         and handling None values as needed.
-     
-     - convert_ndarrays_to_nested_lists(data):
-         Recursively converts NumPy arrays back to Python lists, preserving dict/tuple structures,
-         ensuring the data is JSON-friendly.
-     
-     - replace_nans_infs(obj):
-         Recursively scans a nested structure (lists, tuples, dicts) for NaN or ±Inf float values and
-         replaces them with the strings "NaN", "Infinity", or "-Infinity".
-  
-  2) Serializing and deserializing Gymnasium spaces to and from Python dictionaries. Since Gym spaces often
-     contain NumPy arrays (e.g., Box bounds) which are not directly JSON-friendly, these functions convert them
-     into lists and back into their original format.
-     
-     - space_to_dict(space):
-         Recursively serializes a Gymnasium space (such as Box, Discrete, Dict, or Tuple) into a Python dict,
-         converting any contained NumPy arrays to lists.
-     
-     - space_from_dict(data):
-         Recursively deserializes a Python dict (produced by space_to_Dict) back into the corresponding Gymnasium
-         space, restoring the NumPy arrays as necessary.
-"""
+import sys
+import math
 import numpy as np
 import gymnasium as gym
-from typing import Dict, Tuple
 from gymnasium import spaces
+
+MAX_SLICE_SIZE = (32 - 2) * 1024  # 32 KB
+
+def default(o):
+    if isinstance(o, (np.int64, np.int32)):
+        # Convert to float first then to int
+        return int(float(o))
+    elif isinstance(o, np.float64):
+        return float(o)
+    # Add additional conversions if needed.
+    raise TypeError(f"Unserializable object {o} of type {type(o)}")
+
+def get_total_slices(data):
+    data_size = sys.getsizeof(data)
+    print(f"Estimated data size: {data_size} bytes")
+    # Calculate the number of slices needed
+    total_slices = max(math.ceil(data_size / MAX_SLICE_SIZE), 1)    
+    return total_slices
+
+def slice_data(encoded_data, method):
+    total_length = len(encoded_data)
+    total_slices = math.ceil(total_length / MAX_SLICE_SIZE)
+    slices = []
+    for slice_idx in range(total_slices):
+        start = slice_idx * MAX_SLICE_SIZE
+        end = min(start + MAX_SLICE_SIZE, total_length)
+        slice_str = encoded_data[start:end]
+        # Add slice metadata at the front
+        slice_with_metadata = f"{slice_idx}:{total_slices}:{method}:" + slice_str
+        slices.append(slice_with_metadata)
+    return slices
 
 def convert_nested_lists_to_ndarrays(data, dtype):
     """
