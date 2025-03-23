@@ -2,7 +2,6 @@ import os
 import yaml
 from typing import List, Dict
 
-from ..remote_config import RemoteConfig
 
 from remoterl import __version__ as CURRENT_REMOTE_RL_VERSION
 
@@ -25,6 +24,7 @@ def save_config(config_data: Dict) -> None:
     with open(DEFAULT_CONFIG_PATH, "w", encoding="utf-8") as f:
         yaml.dump(config_data, f, sort_keys=False, default_flow_style=False)
 
+from ..remote_config import RemoteConfig
 def generate_default_section_config(section: str) -> Dict:
     return RemoteConfig().to_dict().get(section)
 

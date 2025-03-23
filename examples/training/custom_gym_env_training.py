@@ -1,5 +1,5 @@
 
-from remoterl import remote_tune 
+from remoterl import remote_env 
 from remoterl.remote_config import RemoteConfig
 from ray.rllib.algorithms.ppo import PPOConfig
 from ray.rllib.examples.envs.custom_gym_env import SimpleCorridor
@@ -15,13 +15,12 @@ def main():
     )
     remote_config = RemoteConfig(config=config)
     
-    tune.register_env("corridor-env", lambda config: SimpleCorridor(config))
-    
-    # since remote rl runs parallel processes, we need to register the environment entry point and receive from the server
-    entry_point = remote_tune.get_entry_point("corridor-env")
+    # tune.register_env("corridor-env", lambda config: SimpleCorridor(config))
+    remote_config.register_env("corridor-env", lambda config: SimpleCorridor(config))
     
     # if env_type is None then it will default to custom gym environment 
-    training_key = remote_config.simulate(env = "corridor-env", entry_point = entry_point)
+    training_key = remote_config.simulate(env = "corridor-env")
+    
     print("Remote Training Key:", training_key)
     
     print("configs: ", remote_config.to_dict())

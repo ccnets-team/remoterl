@@ -17,6 +17,10 @@ class RLlibConfig(AlgorithmConfig):
         self.trainable_name = None
                
         self.remote_training_key = None
+        self.env_type = None 
+        self.env_id = None
+        self.entry_point = None
+        self.env_dir = None 
         
         self.__default_config: Optional[AlgorithmConfig] = None
         

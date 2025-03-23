@@ -108,7 +108,13 @@ def replace_nans_infs(obj):
     return obj
 
 def space_to_dict(space):
-    if isinstance(space, spaces.Box):
+    if isinstance(space, dict):
+        # handle top-level dictionary (multi-agent env spaces)
+        return {
+            "type": "dict",
+            "spaces": {str(k): space_to_dict(v) for k, v in space.items()}
+        }
+    elif isinstance(space, spaces.Box):
         return {
             "type": "Box",
             "low": space.low.tolist(),
@@ -117,52 +123,39 @@ def space_to_dict(space):
             "dtype": str(space.dtype)
         }
     elif isinstance(space, spaces.Discrete):
-        return {
-            "type": "Discrete",
-            "n": space.n
-        }
+        return {"type": "Discrete", "n": space.n}
     elif isinstance(space, spaces.MultiDiscrete):
-        return {
-            "type": "MultiDiscrete",
-            "nvec": space.nvec.tolist()
-        }
+        return {"type": "MultiDiscrete", "nvec": space.nvec.tolist()}
     elif isinstance(space, spaces.MultiBinary):
-        return {
-            "type": "MultiBinary",
-            "n": space.n
-        }
+        return {"type": "MultiBinary", "n": space.n}
     elif isinstance(space, spaces.Tuple):
-        return {
-            "type": "Tuple",
-            "spaces": [space_to_dict(s) for s in space.spaces]
-        }
+        return {"type": "Tuple", "spaces": [space_to_dict(s) for s in space.spaces]}
+    elif isinstance(space, spaces.Dict):
+        return {"type": "Dict", "spaces": {str(k): space_to_dict(v) for k, v in space.spaces.items()}}
     else:
         raise NotImplementedError(f"Cannot serialize space type: {type(space)}")
 
-
 def space_from_dict(data: dict) -> gym.spaces.Space:
-    """Recursively deserialize a Python dict to a Gym space."""
     space_type = data.get("type", "Box")
-    if space_type == "Box":
+    if space_type == "dict":
+        return {str(k): space_from_dict(v) for k, v in data["spaces"].items()}
+    elif space_type == "Box":
         dtype = data.get("dtype", "float32")
-        low = np.array(data["low"], dtype=dtype)
-        high = np.array(data["high"], dtype=dtype)
-        shape = tuple(data["shape"])
-        return gym.spaces.Box(low=low, high=high, shape=shape, dtype=dtype)
+        return spaces.Box(
+            low=np.array(data["low"], dtype=dtype),
+            high=np.array(data["high"], dtype=dtype),
+            shape=tuple(data["shape"]),
+            dtype=dtype
+        )
     elif space_type == "Discrete":
-        return gym.spaces.Discrete(data["n"])
+        return spaces.Discrete(data["n"])
     elif space_type == "MultiDiscrete":
-        nvec = np.array(data["nvec"])
-        return gym.spaces.MultiDiscrete(nvec)
+        return spaces.MultiDiscrete(np.array(data["nvec"]))
     elif space_type == "MultiBinary":
-        return gym.spaces.MultiBinary(data["n"])
-    elif space_type == "Dict":
-        sub_dict = {
-            k: space_from_dict(v) for k, v in data["spaces"].items()
-        }
-        return gym.spaces.Dict(sub_dict)
+        return spaces.MultiBinary(data["n"])
     elif space_type == "Tuple":
-        sub_spaces = [space_from_dict(s) for s in data["spaces"]]
-        return gym.spaces.Tuple(tuple(sub_spaces))
+        return spaces.Tuple(tuple(space_from_dict(s) for s in data["spaces"]))
+    elif space_type == "Dict":
+        return spaces.Dict({str(k): space_from_dict(v) for k, v in data["spaces"].items()})
     else:
         raise NotImplementedError(f"Cannot deserialize space type: {space_type}")

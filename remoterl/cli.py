@@ -206,21 +206,24 @@ def simulate(
 
     from .utils.simulation_utils import connect_to_remote_rl_server
     remote_rl_server_url, remote_training_key = connect_to_remote_rl_server(region, env_config)
+    
+    configs["rllib"]["env_type"] = env_type
+    configs["rllib"]["env"] = env
+    configs["rllib"]["num_env_runners"] = num_env_runners
+    configs["rllib"]["num_envs_per_env_runner"] = num_envs_per_env_runner
+    
+    save_config(configs)
 
     # Initial args as list (command-line-style)
     extra_args = [
         "--remote_training_key", remote_training_key,
         "--remote_rl_server_url", remote_rl_server_url,
-        "--env_type", env_type,
-        "--env_id", env,
-        "--num_agents", str(num_env_runners * num_envs_per_env_runner),
-        "--num_envs", str(num_env_runners),
     ]
 
-    # Dynamically add other args from env_config
-    for key, value in env_config.items():
-        if value is not None:
-            extra_args.extend([f"--{key}", str(value)])
+        # # Dynamically add other args from env_config
+        # for key, value in env_config.items():
+        #     if value is not None:
+        #         extra_args.extend([f"--{key}", str(value)])
 
     typer.echo("Starting the simulation in a separate terminal window. Please monitor that window for real-time logs.")
     from .local_simulator import launch_simulator

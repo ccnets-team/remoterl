@@ -1,10 +1,10 @@
 from typing import Optional, Dict, Any
 from ray.rllib.algorithms.algorithm_config import AlgorithmConfig, NotProvided
-from ray.tune.registry import get_trainable_cls  # Assumes you have a function to get trainable classes
 from .config.sagemaker import SageMakerConfig
 from .cloud_trainer import CloudTrainer
 from .utils.simulation_utils import launch_remote_rl_simulation  # Assumes you have a simulation utility
 from .config.rllib import RLlibConfig
+from typing import Callable
 
 class RemoteConfig():
     """
@@ -67,8 +67,6 @@ class RemoteConfig():
         env: str = NotProvided,
         num_env_runners: int = NotProvided,
         num_envs_per_env_runner: int = NotProvided,
-        entry_point = None,
-        env_dir = None, 
         region: Optional[str] = None
     ) -> str:
         """
@@ -97,24 +95,23 @@ class RemoteConfig():
         
         # Use defaults if not already set in the algorithm configuration.
         if num_envs_per_env_runner is NotProvided:
-            self.num_envs_per_env_runner = max(self.num_envs_per_env_runner, 1)
-        else:
-            self.num_envs_per_env_runner = num_envs_per_env_runner
+            num_envs_per_env_runner = max(self._rllib.num_envs_per_env_runner, 1)
             
         if num_env_runners is NotProvided:
-            self.num_env_runners = max(self.num_env_runners, 1)
-        else:
-            self.num_env_runners = num_env_runners
-        
+            num_env_runners = max(self._rllib.num_env_runners, 1)
+
         if env is NotProvided:
-            self.env = self.env or "Walker2d-v5"
-        else:
-            self.env = env
+            env = self._rllib.env or "Walker2d-v5"
+            
+        if env_type is NotProvided:
+            env_type = self._rllib.env_type or "rllib"
+            
+        self._rllib.num_envs_per_env_runner = num_envs_per_env_runner
+        self._rllib.num_env_runners = num_env_runners
+        self._rllib.env = env
+        self._rllib.env_type = env_type
         
-        remote_training_key = launch_remote_rl_simulation(
-            env_type, self.env, self.num_envs_per_env_runner, self.num_env_runners, entry_point, env_dir,
-            self._sagemaker.region  
-        )
+        remote_training_key = launch_remote_rl_simulation()
         
         self.remote_training_key = remote_training_key
         return remote_training_key
@@ -146,3 +143,17 @@ class RemoteConfig():
                 self._rllib.set_config(**v)
             else:
                 print(f"Warning: No attribute '{k}' in RemoteConfig")
+
+    def register_env(self, name: str, env_creator: Callable):
+        if not env_creator:
+            print("Error: No environment creator provided.")    
+            return
+        try:
+            env_instance = env_creator({})
+        except Exception as e:
+            print(f"Error: {e}")
+            env_instance = env_creator()
+        entry_point = f"{env_instance.__class__.__module__}:{env_instance.__class__.__name__}"
+        self._rllib.entry_point = entry_point
+        self._rllib.env_id = name
+        print(f"Environment registered: {name} ({entry_point})")

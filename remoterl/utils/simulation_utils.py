@@ -4,15 +4,19 @@ import json
 import websocket
 import time
 from ..local_simulator import launch_simulator
+from ..utils.config_utils import load_config
 
-def connect_to_remote_rl_server(region: str, env_config: Dict) -> str:
-    
-    ws = websocket.WebSocket()
+def get_remote_rl_server_url(region: str) -> str:
     if region not in ["us-east-1", "ap-northeast-2"]:
         raise ValueError(f"Invalid region: {region}")
-    
     remote_rl_server_url = f"wss://{region}.ccnets.org"
+    return remote_rl_server_url
+
+def connect_to_remote_rl_server(region: str, env_config: Dict) -> str:
+
+    remote_rl_server_url = get_remote_rl_server_url(region)
     
+    ws = websocket.WebSocket()
     ws.connect(remote_rl_server_url)
     
     register_request = json.dumps({
@@ -28,7 +32,6 @@ def connect_to_remote_rl_server(region: str, env_config: Dict) -> str:
 def wait_for_config_update(sent_remote_training_key, timeout=10):
     start_time = time.time()
     while time.time() - start_time < timeout:
-        from remoterl.utils.config_utils import load_config
         config_data = load_config()  # Your function to load the config file.
         registered_remote_training_key = config_data.get("rllib", {}).get("remote_training_key")
         if sent_remote_training_key == registered_remote_training_key:
@@ -36,7 +39,16 @@ def wait_for_config_update(sent_remote_training_key, timeout=10):
         time.sleep(0.5)
     raise TimeoutError("Timed out waiting for config update.")
 
-def launch_remote_rl_simulation(env_type, env, num_envs_per_env_runner, num_env_runners, entry_point, env_dir, region):
+def launch_remote_rl_simulation():
+    config_data = load_config()
+    rllib_dict = config_data.get("rllib", {})   
+    sagemaker_dict = config_data.get("sagemaker", {})   
+
+    env = rllib_dict.get("env")
+    num_env_runners = rllib_dict.get("num_env_runners")
+    
+    region = sagemaker_dict.get("region")
+    
     env_config = {
         "env_id": env,
         "num_envs": num_env_runners,
@@ -47,16 +59,7 @@ def launch_remote_rl_simulation(env_type, env, num_envs_per_env_runner, num_env_
     extra_args = [
         "--remote_training_key", remote_training_key,
         "--remote_rl_server_url", remote_rl_server_url,
-        "--env_type", env_type,
-        "--env_id", env,
-        "--num_agents", str(num_env_runners * num_envs_per_env_runner),
-        "--num_envs", str(num_env_runners),
     ]
-    
-    if entry_point:
-        env_config["entry_point"] = entry_point
-    if env_dir:
-        env_config["env_dir"] = env_dir
 
     # Dynamically add other args from env_config
     for key, value in env_config.items():
@@ -69,7 +72,7 @@ def launch_remote_rl_simulation(env_type, env, num_envs_per_env_runner, num_env_
     
     try:
         updated_config = wait_for_config_update(remote_training_key, timeout=10)
-        received_remote_training_key = updated_config["rllib"]["remote_training_key"]
+        received_remote_training_key = updated_config.get("rllib", {}).get("remote_training_key")
         print("Remote Training Key for simulation updated successfully:")
         print("**Remote Training Key Under**\n")
         print(received_remote_training_key)

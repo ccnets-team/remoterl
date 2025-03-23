@@ -1,5 +1,5 @@
 
-from remoterl import remote_tune 
+from remoterl import remote_env 
 from remoterl.remote_config import RemoteConfig
 from ray.rllib.algorithms.ppo import PPOConfig
 

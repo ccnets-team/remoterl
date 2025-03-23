@@ -48,8 +48,8 @@ class EnvServer(EnvAPI):
         else:
             if not (env_type.lower() in ["rllib", "custom", "custom_gym"]):
                 print(f"Unknown environment type: {env_type}. Defaulting to 'custom' environment.")
-            from ..remote_tune import RLlibEnv
-            env_wrapper = RLlibEnv
+            from ..remote_env import RemoteMultiAgentEnv
+            env_wrapper = RemoteMultiAgentEnv
             
         super().__init__(env_wrapper, remote_training_key, remote_rl_server_url, env_idx, num_agents)
 

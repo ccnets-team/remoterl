@@ -50,37 +50,48 @@ def launch_simulator(
 
     return proc
 
+from ray.rllib.env.env_context import EnvContext
+from ray.tune.registry import register_env
+import importlib
+def env_creator_from_entry_point(entry_point: str):
+    module_name, class_name = entry_point.split(":")
+    module = importlib.import_module(module_name)
+    env_cls = getattr(module, class_name)
+
+    def creator(config: EnvContext):
+        return env_cls(config)
+
+    return creator
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--remote_training_key", required=True)
     parser.add_argument("--remote_rl_server_url", required=True)
-    parser.add_argument("--env_type", required=True)
-    parser.add_argument("--env_id", required=True)
-    parser.add_argument("--num_envs", type=int, required=True)
-    parser.add_argument("--num_agents", type=int, required=True)
-    parser.add_argument("--entry_point", default=None)
-    parser.add_argument("--env_dir", default=None)
-
+    
     args = parser.parse_args()
-
+    
     remote_training_key = args.remote_training_key
     remote_rl_server_url = args.remote_rl_server_url
-    env_type = args.env_type
-    env_id = args.env_id
-    num_envs = args.num_envs
-    num_agents = args.num_agents
-    entry_point = args.entry_point
-    env_dir = args.env_dir
-    base_agents, remainder = divmod(num_agents, num_envs)
-    agents_per_env = [base_agents + (1 if i < remainder else 0) for i in range(num_envs)]
+    
+    from remoterl.utils.config_utils import load_config, save_config
+    config_data = load_config()
+    
+    rllib_dict = config_data.get("rllib", {})
+    num_env_runners = rllib_dict.get("num_env_runners")
+    num_envs_per_env_runner = rllib_dict.get("num_envs_per_env_runner")
+
+    env_type = rllib_dict.get("env_type")
+    env_id = rllib_dict.get("env_id")
+    entry_point = rllib_dict.get("entry_point")
+    env_dir = rllib_dict.get("env_dir")
     
     if entry_point:
         if env_type == "gym":
             from remoterl.wrappers.gym_env import GymEnv
             GymEnv.register(env_id, entry_point)
         elif env_type == "rllib":
-            from remoterl.remote_tune import RLlibEnv
-            RLlibEnv.register(env_id, entry_point)
+            env_creator = env_creator_from_entry_point(entry_point)
+            register_env(env_id, env_creator)
     elif env_dir:
         if env_type == "unity":
             from remoterl.wrappers.unity_env import UnityEnv
@@ -88,7 +99,7 @@ def main():
                                 
     launchers = []
     from remoterl.env_host.server import EnvServer
-    for i in range(num_envs):
+    for i in range(num_env_runners):
         env_idx = i
         launchers.append(
             EnvServer.launch(
@@ -97,12 +108,11 @@ def main():
                 env_type,
                 env_id,
                 env_idx,
-                agents_per_env[i],
+                num_envs_per_env_runner,
             )
         )
-    from remoterl.utils.config_utils import load_config, save_config
-    config_data = load_config()
-    config_data["rllib"]["remote_training_key"] = remote_training_key  # fixed plural naming consistency
+
+    rllib_dict["remote_training_key"] = remote_training_key  # fixed plural naming consistency
     save_config(config_data)
 
     typer.echo("Simulation running. This terminal is now dedicated to simulation;")
