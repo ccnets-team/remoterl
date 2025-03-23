@@ -1,10 +1,10 @@
-# RemoteRL: WebServer-Based Remote Training for Ray RLlib
+# RemoteRL: WebServer-Based Remote Training for RLlib
 
 ---
 
 ## Overview
 
-**RemoteRL** simplifies remote reinforcement learning (RL) training specifically tailored for popular RL frameworks such as Ray's RLlib. Leveraging a WebSocket-based interface, RemoteRL seamlessly bridges local RLlib environment simulations with cloud-based training on AWS SageMaker, enabling efficient, scalable, and streamlined RL workflows.
+**RemoteRL** enables remote reinforcement learning (RL) training specifically tailored for popular frameworks like Ray's RLlib. Utilizing a WebSocket-based real-time training interface, RemoteRL seamlessly connects local RLlib environment simulations with cloud-based training on AWS SageMaker—eliminating the need to deploy environments remotely. This design supports efficient, scalable, and streamlined RL workflows.
 
 RemoteRL provides two user-friendly interfaces:
 - **Command-Line Interface (CLI):** For rapid experimentation and quick validations.
@@ -22,9 +22,9 @@ pip install remoterl --upgrade
 
 ### Command-Line Interface
 
-1. **Simulate your local environment on the RemoteRL server:**
+1. **Launch your local environment and connect it to the RemoteRL web server:**
 
-   Quickly set up your local environment and automatically connect it to the RemoteRL cloud server for real-time interaction:
+   Quickly set up your local environment and automatically connect it to the RemoteRL websocket server for real-time interaction:
 
    ```bash
    remoterl simulate
