@@ -1,6 +1,5 @@
 import copy
 import gymnasium as gym
-from gymnasium import spaces
 from ray.rllib.env import MultiAgentEnv
 from ray.rllib.env.env_context import EnvContext
 
@@ -28,28 +27,39 @@ class RemoteMultiAgentEnv(MultiAgentEnv):
 
     def reset(self, seed=None, options=None):
         obs, infos = {}, {}
-        for i, env in enumerate(self.envs):
+        for agent_id, env in zip(self.agents, self.envs):
             ob, info = env.reset(seed=seed, options=options)
-            obs[str(i)] = ob
-            infos[str(i)] = info
-            
+            obs[agent_id] = ob
+            infos[agent_id] = info
+
         return obs, infos
 
     def step(self, action_dict):
-        if not isinstance(action_dict, dict):
-            action_dict = {str(i): action for i, action in enumerate(action_dict) if action is not None}
-            
         obs, rewards, terminateds, truncateds, infos = {}, {}, {}, {}, {}
 
-        for idx, (i, action) in enumerate(action_dict.items()):
-            ob, reward, terminated, truncated, info = self.envs[idx].step(action)
+        if isinstance(action_dict, dict):
+            for agent_id, action in action_dict.items():
+                idx = int(agent_id)  # explicitly convert agent_id to env index
+                ob, reward, terminated, truncated, info = self.envs[idx].step(action)
 
-            obs[i] = ob
-            rewards[i] = reward
-            terminateds[i] = terminated
-            truncateds[i] = truncated
-            infos[i] = info
-            
+                obs[agent_id] = ob
+                rewards[agent_id] = reward
+                terminateds[agent_id] = terminated
+                truncateds[agent_id] = truncated
+                infos[agent_id] = info
+        else:
+            for idx, action in enumerate(action_dict):
+                if action is None:
+                    continue
+                agent_id = str(idx)
+                ob, reward, terminated, truncated, info = self.envs[idx].step(action)
+
+                obs[agent_id] = ob
+                rewards[agent_id] = reward
+                terminateds[agent_id] = terminated
+                truncateds[agent_id] = truncated
+                infos[agent_id] = info
+
         return obs, rewards, terminateds, truncateds, infos
 
     def close(self):

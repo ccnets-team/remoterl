@@ -21,7 +21,7 @@ install_requires = env_requirements + cli_dependencies
 
 setup(
     name="remoterl",
-    version="0.2.6",
+    version="0.2.7",
     packages=find_packages(), 
     include_package_data=True,
     package_data={
