@@ -18,11 +18,11 @@ install_requires = env_requirements + cli_dependencies
 
 setup(
     name="remoterl",
-    version="1.0.0",
+    version="1.0.1",
     packages=find_packages(), 
     include_package_data=True,
     package_data={
-        "remoterl": ["*.yaml"],
+        "remoterl.cli": ["*.yaml"],  # explicitly specify the cli subpackage
     },
     entry_points={
         "console_scripts": [
