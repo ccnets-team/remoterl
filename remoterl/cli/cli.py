@@ -200,7 +200,7 @@ def simulate(
     }
 
     from ..utils.connection import connect_to_remote_rl_server
-    remote_rl_server_url, remote_training_key = connect_to_remote_rl_server(region, env_config)
+    remote_training_key = connect_to_remote_rl_server(region, env_config)
         
     # Update RLlib-specific configurations clearly
     configs["rllib"].update({
@@ -216,23 +216,28 @@ def simulate(
     # Initial args as list (command-line-style)
     extra_args = [
         "--remote_training_key", remote_training_key,
-        "--remote_rl_server_url", remote_rl_server_url,
+        "--region", region,
+        "--env", env or ""
+        "--entry_point", entry_point or ""
+        "--num_env_runners", str(num_env_runners),
     ]
-
+    
     typer.echo("Starting the simulation in a separate terminal window. Please monitor that window for real-time logs.")
-    from ..core.local_simulator import launch_simulator
-    simulation_terminal = launch_simulator(extra_args)
-    try:
-        from .config import wait_for_config_update
-        updated_config = wait_for_config_update(remote_training_key, timeout=10)
-        remote_training_key = updated_config.get("rllib", {}).get("remote_training_key", {})
-        dislay_output = "**Remote Training Key Under**\n" + yaml.dump(remote_training_key, default_flow_style=False, sort_keys=False)
-        typer.echo(typer.style(dislay_output.strip(), fg=typer.colors.GREEN))
-        typer.secho("Simulation is now running. Please run 'remoterl train' to continue..", fg="green")
-    except TimeoutError:
-        typer.echo("Configuration update timed out. Terminating simulation process.")
-        simulation_terminal.terminate()
-        simulation_terminal.wait()
+    from ..remote_simulator import launch_simulator
+    success = launch_simulator(extra_args)
+    if success:
+        try:
+            from .config import wait_for_config_update
+            updated_config = wait_for_config_update(remote_training_key, timeout=10)
+            remote_training_key = updated_config.get("rllib", {}).get("remote_training_key", {})
+            display_output = "**Remote Training Key Under**\n" + yaml.dump(remote_training_key, default_flow_style=False, sort_keys=False)
+            typer.echo(typer.style(display_output.strip(), fg=typer.colors.GREEN))
+            typer.secho("Simulation is now running. Please run 'remoterl train' to continue.", fg="green")
+        except TimeoutError:
+            typer.echo("Configuration update timed out. Please verify manually if simulation started correctly.")
+    else:
+        typer.secho("Simulation failed to launch.", fg="red")
+        raise typer.Exit(code=1)
 
 @app.command(
     "train",

@@ -27,7 +27,7 @@ def connect_to_remote_rl_server(region: str, env_config: Dict) -> str:
     remote_training_key = ws.recv()
     ws.close()      
     
-    return remote_rl_server_url, remote_training_key
+    return remote_training_key
 
 def register_beta_access(
     role_arn: str,

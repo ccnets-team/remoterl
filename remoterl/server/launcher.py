@@ -30,7 +30,6 @@ class EnvLauncher(EnvAPI):
         remote_rl_server_url,
         env,
         env_idx,
-        num_agents,
         entry_point=None,
         env_dir=None
     ):
@@ -38,7 +37,7 @@ class EnvLauncher(EnvAPI):
             from gymnasium import register
             register(env, entry_point)
                     
-        super().__init__(RemoteMultiAgentEnv, remote_training_key, remote_rl_server_url, env_idx, num_agents)
+        super().__init__(RemoteMultiAgentEnv, remote_training_key, remote_rl_server_url, env_idx)
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.shutdown()
@@ -55,14 +54,13 @@ class EnvLauncher(EnvAPI):
         self.shutdown_event.set()
 
     @classmethod
-    def launch(cls, remote_training_key, remote_rl_server_url, env, env_idx, num_agents,
+    def launch(cls, remote_training_key, remote_rl_server_url, env, env_idx,
                entry_point=None, env_dir=None) -> "EnvLauncher":
         instance = cls(
             remote_training_key=remote_training_key,
             remote_rl_server_url=remote_rl_server_url,
             env=env,
             env_idx=env_idx,
-            num_agents=num_agents,
             entry_point=entry_point,
             env_dir=env_dir
         ) 

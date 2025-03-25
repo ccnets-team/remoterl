@@ -1,11 +1,6 @@
 # requirements.txt
 
 websocket-client
-boto3
-sagemaker
 msgpack
 requests
-gymnasium>=1.0.0
-gymnasium[mujoco]
-ray[rllib]>=2.40
-torch
+gymnasium[mujoco]>=1.0.0

@@ -3,11 +3,11 @@ from typing import Any, Callable, Dict, Optional
 from ray.rllib.algorithms.algorithm_config import AlgorithmConfig, NotProvided
 
 from .core.cloud_trainer import CloudTrainer
-from .core.local_simulator import launch_remote_rl_simulation
+from .remote_simulator import launch_simulation_from_config
 from .config.rllib import RLlibConfig
 from .config.sagemaker import SageMakerConfig
 
-class RemoteConfig():
+class RemoteConfig:
     """
     RemoteConfig provides a high-level wrapper for Ray RLlib algorithm configurations and SageMaker deployment settings,
     enabling easy management and deployment of remote reinforcement learning training jobs on AWS SageMaker.
@@ -128,7 +128,7 @@ class RemoteConfig():
         self._rllib.env = env
         entry_point = self._rllib.entry_point
         
-        remote_training_key = launch_remote_rl_simulation(env, num_env_runners, num_envs_per_env_runner, entry_point, final_region)
+        remote_training_key = launch_simulation_from_config(env, num_env_runners, num_envs_per_env_runner, entry_point, final_region)
         self._rllib.remote_training_key = remote_training_key
         
         return remote_training_key

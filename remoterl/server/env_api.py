@@ -4,7 +4,7 @@ import json
 import logging
 import socket
 import threading
-from typing import Any, Optional, Callable
+from typing import Any, Optional
 
 # Third-party library imports
 import msgpack
@@ -27,7 +27,7 @@ from ..utils.message import (
 WEBSOCKET_TIMEOUT = 1
 class EnvAPI:
     def __init__(self, env_cls, remote_training_key, remote_rl_server_url, 
-               env_idx, num_agents):
+               env_idx):
         self.env_cls = env_cls
         self.environments = {}
         self.env_idx = env_idx
@@ -45,7 +45,7 @@ class EnvAPI:
         self.ws.connect(remote_rl_server_url)
         self.ws.settimeout(WEBSOCKET_TIMEOUT)
         
-        self.send_message("init", remote_training_key, data = {"env_idx": env_idx, "num_agents": num_agents})
+        self.send_message("init", remote_training_key, data = {"env_idx": env_idx})
         
     def __exit__(self, exc_type, exc_value, traceback):
         if self.ws:
@@ -126,9 +126,9 @@ class EnvAPI:
                 env_key = data.get("env_key")
                 # Execute method based on request
                 if method == "make":
-                    result = self.make(env_key, data.get("env_id"), data.get("render_mode"))
+                    result = self.make(env_key, data.get("env", data.get("env_id")), data.get("render_mode"))
                 elif method == "make_vec":
-                    result = self.make_vec(env_key, data.get("env_id"), data.get("num_envs"))
+                    result = self.make_vec(env_key, data.get("env", data.get("env_id")), data.get("num_envs"))
                 elif method == "reset":
                     result = self.reset(env_key, data.get("seed"), data.get("options"))
                 elif method == "step":

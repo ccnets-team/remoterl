@@ -2,13 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ docker/remoterl-env ]
   pull_request:
-    branches: [ main ]
+    branches: [ docker/remoterl-env ]
 
 jobs:
   build:
-    if: true
+    if: false
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]

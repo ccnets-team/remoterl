@@ -1,10 +1,7 @@
 import gymnasium as gym
 import copy
 
-from ray.rllib.env.env_context import EnvContext
-from ray.rllib.env import MultiAgentEnv
-
-class RemoteMultiAgentEnv(MultiAgentEnv):
+class RemoteMultiAgentEnv(gym.Env):
     """
     RemoteMultiAgentEnv is a wrapper around Gymnasium environments specifically designed for
     remote reinforcement learning training with Ray RLlib.
@@ -18,7 +15,7 @@ class RemoteMultiAgentEnv(MultiAgentEnv):
     streamlined deployment and efficient remote training on cloud platforms, including AWS SageMaker.
 
     Args:
-        config (EnvContext, optional): RLlib's environment context providing configurations.
+        config (dict, optional): RLlib's environment context providing configurations.
             - num_envs (int): Number of parallel environment instances to create.
             - env (str): The Gymnasium environment ID (e.g., "CartPole-v1").
 
@@ -38,7 +35,7 @@ class RemoteMultiAgentEnv(MultiAgentEnv):
         make_vec(env_id, num_envs):
             Class method to create a vectorized multi-environment instance.
     """    
-    def __init__(self, config: EnvContext = None):
+    def __init__(self, config: dict = None):
         super().__init__()
 
         if config is None:
@@ -102,9 +99,11 @@ class RemoteMultiAgentEnv(MultiAgentEnv):
     
     @classmethod
     def make(cls, env_id):
-        return cls(EnvContext({"env": env_id}, worker_index=0))
+        env_context = {"env": env_id}
+        return cls(env_context)
 
     @classmethod
     def make_vec(cls, env_id, num_envs):
-        return cls(EnvContext({"env": env_id, "num_envs": num_envs}, worker_index=0))
+        env_context = {"env": env_id, "num_envs": num_envs}
+        return cls(env_context)
 

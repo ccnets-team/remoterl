@@ -5,7 +5,7 @@ from typing import List, Dict
 
 from remoterl import __version__ as CURRENT_REMOTE_RL_VERSION
 
-DEFAULT_CONFIG_PATH = os.path.expanduser("~/.remoterl/config.yaml")
+DEFAULT_CONFIG_PATH = os.getenv("REMOTERL_CONFIG_PATH", os.path.expanduser("~/.remoterl/config.yaml"))
 TOP_CONFIG_CLASS_KEYS = ["rllib", "sagemaker"]
 
 def load_config() -> Dict:
