@@ -1,4 +1,4 @@
-# Remote Environment-Integrated Online Reinforcement Learning
+# RemoteRL: Remote Environment-Integrated Online RL
 
 ## Overview
 
