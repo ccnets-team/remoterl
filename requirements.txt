@@ -1,6 +1,0 @@
-# requirements.txt
-
-websocket-client
-msgpack
-requests
-gymnasium[mujoco]>=1.0.0

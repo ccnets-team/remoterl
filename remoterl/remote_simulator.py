@@ -124,9 +124,7 @@ def launch_all_env_servers(remote_training_key, remote_rl_server_url,
     return launchers
 
 def main():
-    from remoterl.cli.config import load_config, save_config, ensure_config_exists
     from remoterl.utils.connection import get_remote_rl_server_url, connect_to_remote_rl_server
-    is_docker_inside = bool(os.getenv("REMOTERL_CONFIG_PATH"))
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--region", required=True)
@@ -140,13 +138,21 @@ def main():
     entry_point = args.entry_point
     num_env_runners = args.num_env_runners
     remote_training_key = args.remote_training_key
+    is_docker_inside = False
     
     if not remote_training_key:
-        remote_training_key = connect_to_remote_rl_server(region=region)
+        is_docker_inside = True
+        env_config = {
+            "env_id": env,
+            "num_envs": num_env_runners,
+        }
+        remote_training_key = connect_to_remote_rl_server(region=region, env_config = env_config)
+        print(f"Remote Training Key: {remote_training_key}")
     
     remote_rl_server_url = get_remote_rl_server_url(region)
     
     if not is_docker_inside:
+        from remoterl.cli.config import load_config, save_config, ensure_config_exists
         ensure_config_exists()
 
     launchers = launch_all_env_servers(
@@ -159,6 +165,7 @@ def main():
     )
     
     if not is_docker_inside:
+        from remoterl.cli.config import load_config, save_config, ensure_config_exists
         config_data = load_config()
         config_data.setdefault("rllib", {}).update({"remote_training_key": remote_training_key})
         save_config(config_data)
@@ -176,6 +183,7 @@ def main():
             launcher.server_thread.join(timeout=2)
     
     if not is_docker_inside:
+        from remoterl.cli.config import load_config, save_config, ensure_config_exists
         config_data = load_config()
         current_key = config_data.get("rllib", {}).get("remote_training_key")
 
