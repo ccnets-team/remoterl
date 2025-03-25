@@ -47,7 +47,7 @@ Configure and integrate your environment simulations to connect seamlessly with 
   remote_config.train()
   ```
 
-- **Docker Container** *(Coming Soon)*  
+- **Docker Container(Coming Soon)**  
   Ready to use entering entry_point of your environment(eq, <module>:<environment_class>)
 
   **Example Usage (Planned Feature)**:
@@ -78,8 +78,8 @@ Effortlessly pair your reinforcement learning algorithms with your environments 
   remote_config.train()
   ```
   
-- **Client’s Own Container**
-  Fully customizable containers that integrate with RemoteRL by including our Python package during your Docker container build process.
+- **Client’s Own Container(Coming Soon)**
+  Fully customizable containers that integrate with RemoteRL by including our Python package during your Docker container build process
 
   **Quick Docker Example** *(customizable; base image below is illustrative only)*:
 
