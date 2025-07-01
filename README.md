@@ -13,8 +13,8 @@ pip install remoterl
 # + Stable‑Baselines3 extras
 pip install "remoterl[stable-baselines3]"
 
-# + Ray RLlib extras
-pip install "remoterl[rllib]"
+# + Ray RLlib extras (experimental – may break with some Ray versions)
+# pip install "remoterl[rllib]"   # RLlib support is currently unstable
 ```
 
 ---
