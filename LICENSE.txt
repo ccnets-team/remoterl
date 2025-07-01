@@ -1,0 +1,133 @@
+
+# REMOTERL SDK COMMERCIAL LICENSE AGREEMENT (v1.1 -- 2025-06-30)
+
+**IMPORTANT.** This RemoteRL SDK Commercial License Agreement (this "Agreement") is a legally binding contract between **CausalMachineLearning Co., Ltd.** (KR BRN 728-86-02681) and **CCNets, Inc.**, a Delaware (USA) corporation (together, "Licensor"), and the person or entity that downloads, installs, or otherwise uses the RemoteRL client software development kit (the "SDK") ("Customer"). By installing or using the SDK, Customer agrees to be bound by this Agreement as of the date of first download or use (the "Effective Date").
+
+---
+
+## 1. DEFINITIONS
+
+| Term | Meaning |
+|------|---------|
+| **"SDK"** | The RemoteRL Python package published on PyPI, together with any associated libraries, header files, example code, and documentation distributed by Licensor for integrating Customer's reinforcement-learning workloads with Licensor's managed remote reinforcement-learning service. *For clarity, the SDK bundles **no** third-party components that require separate attribution.* |
+| **"Remote Reinforcement Learning Service"** | Licensor-operated WebSocket endpoints and related cloud infrastructure that transmit observations, actions, rewards, metrics, and other data between Customer-controlled trainers, simulators, robots, or other devices. |
+| **"Data Credit"** | A prepaid balance denominated in megabytes (MB) that is consumed by the Remote Reinforcement Learning Service in accordance with **Exhibit B (Data Credit Metering Rules)**. |
+| **"Internal Use"** | Use by Customer's employees and individual contractors (under written confidentiality obligations) solely for Customer's own business operations and not for any third-party's benefit. |
+
+---
+
+## 2. GRANT OF LICENSE
+
+2.1 **License.** Subject to Customer's continuous compliance with this Agreement and payment of all applicable fees, Licensor grants Customer a limited, non-exclusive, non-transferable, non-sublicensable right **(a)** to install and use the object-code form of the SDK on Customer-controlled machines; and **(b)** to develop and run Internal-Use applications that interact with the Remote Reinforcement Learning Service via the SDK.
+
+2.2 **No Sale.** The SDK is licensed, not sold. Licensor reserves all rights not expressly granted.
+
+---
+
+## 3. RESTRICTIONS
+
+Customer shall not, and shall not permit any third party to:
+
+* **(a) Reverse engineer, decompile, disassemble, or otherwise derive source code** from the SDK, except to the limited extent such activity is expressly permitted by applicable law notwithstanding this limitation.
+* **(b) Modify, translate, or create derivative works** of the SDK or any portion thereof.
+* **(c) Redistribute, sell, rent, lease, lend, or provide the SDK** to any third party, or use the SDK to operate a service bureau, SaaS, or other hosted offering for the benefit of any third party.
+* **(d) Bypass, interfere with, or disable** any technical measures that enforce Data Credit metering, licence-key validation, or service access controls.
+* **(e) Use the SDK or Remote Reinforcement Learning Service** in violation of any applicable law (including export, sanctions, or privacy laws) or to build or train weapons systems.
+
+---
+
+## 4. FEES; DATA CREDIT
+
+4.1 **Data Credit Purchase & Free Allowance.** Customer must maintain a positive Data Credit balance as described on Licensor's website or order form. Customer may receive a one-time or recurring free allowance (expressed in gigabytes) if and as stated on the website. **Any such free allowance is provided "AS IS" without warranty or support, and Licensor assumes no responsibility or liability whatsoever for any loss, damage, or claim arising from Customer's use of the free Data Credit.** All devices that present the same API-key draw from a single, shared Data Credit wallet.
+
+4.2 **Pre-paid Deposit Metering.** Data relay traffic is debited from the Data Credit balance under the **1 MB deposit window** with a **10 KiB minimum charge per transaction**, as described in **Exhibit B**.
+
+4.3 **Suspension & Remote Disable.** In addition to other remedies, Licensor may remotely deactivate the SDK or block access if: **(a)** any undisputed fees remain overdue by more than fourteen (14) days; **(b)** Customer breaches Section 3 (Restrictions) or Section 7 (Intellectual Property); or **(c)** Licensor reasonably suspects fraud, abuse, or security threats. Except in an emergency affecting security or legal compliance, Licensor will give at least five (5) Business Days' prior written notice before deactivation.
+
+4.4 **Credit Expiry.** Data Credit that remains unused twelve (12) months after purchase expires and is forfeited without refund, unless otherwise required by law.
+
+---
+
+## 5. TERM & TERMINATION
+
+5.1 **Term.** This Agreement commences on the Effective Date and continues until terminated in accordance with this Section 5.
+
+5.2 **Termination for Cause.** Either party may terminate this Agreement immediately upon written notice if the other party materially breaches the Agreement and fails to cure within ten (10) days after receipt of notice.
+
+5.3 **Effect of Termination.** Upon any termination, Customer must cease all use of the SDK, delete all copies, and destroy any Confidential Information. **Automated backup copies that cannot be individually erased will be overwritten according to regular rotation cycles and are inaccessible in production; they will be purged automatically upon expiry.** Sections 3, 4.3, 5.3, 6 - 11 survive termination.
+
+---
+
+## 6. FEEDBACK
+
+Customer hereby grants Licensor a perpetual, worldwide, non-exclusive, royalty-free licence to use, reproduce, modify, and otherwise exploit any suggestions, comments, or other feedback provided by Customer relating to the SDK or the Remote Reinforcement Learning Service.
+
+---
+
+## 7. INTELLECTUAL PROPERTY
+
+The SDK and Remote Reinforcement Learning Service, including all copies, improvements, and derivatives, are and remain the sole property of Licensor and its licensors. Customer acquires no ownership interest. All trademarks, service marks, and logos are the exclusive property of Licensor and may not be used without Licensor's prior written consent.
+
+---
+
+## 8. DATA PRIVACY AND SECURITY
+
+8.1 **No Storage of Relay Payloads.** Observations, actions, rewards, and similar runtime data transmitted through the Remote Reinforcement Learning Service are processed only in volatile memory and are **not** persisted by Licensor.
+
+8.2 **Ephemeral Configuration Data.** Session parameters such as `num_workers` and `num_env_runners` are retained solely for operational control and are automatically deleted within seven (7) days of session close.
+
+8.3 **Event Logs.** Licensor may collect anonymised or aggregated diagnostic events emitted by the SDK (e.g., crash reports, error codes) to improve reliability and detect abuse.
+
+8.4 **Usage Metrics.** Licensor records network byte counts, duration, and similar metadata for billing and analytics. Licensor will not inspect Customer-generated payloads unless strictly necessary to investigate service incidents, and will notify Customer prior to such inspection whenever legally permissible.
+
+8.5 **Security Measures.** Licensor implements industry-standard technical and organisational measures to protect data against unauthorised access, as further described in **Exhibit C**.
+
+8.6 **Data Processing Addendum.** The parties incorporate the Data Processing Addendum in **Exhibit C (DPA)**, which prevails over this Agreement in the event of any conflict concerning personal data.
+
+---
+
+## 9. WARRANTY DISCLAIMER
+
+THE SDK AND REMOTE REINFORCEMENT LEARNING SERVICE ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. LICENSOR DISCLAIMS ALL IMPLIED WARRANTIES, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. LICENSOR DOES NOT WARRANT THAT THE SDK OR REMOTE REINFORCEMENT LEARNING SERVICE WILL BE UNINTERRUPTED OR ERROR-FREE OR THAT THEY WILL MEET CUSTOMER'S REQUIREMENTS.
+
+---
+
+## 10. LIMITATION OF LIABILITY
+
+IN NO EVENT WILL LICENSOR BE LIABLE FOR ANY INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, OR FOR LOSS OF PROFITS, DATA, OR GOODWILL, ARISING FROM OR RELATED TO THIS AGREEMENT OR USE OF THE SDK OR REMOTE REINFORCEMENT LEARNING SERVICE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. LICENSOR'S TOTAL CUMULATIVE LIABILITY UNDER THIS AGREEMENT WILL NOT EXCEED THE GREATER OF (i) THE AMOUNTS PAID BY CUSTOMER TO LICENSOR FOR DATA CREDIT IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM, OR (ii) TEN THOUSAND US DOLLARS (US $10,000). NOTHING IN THIS AGREEMENT LIMITS LIABILITY FOR DEATH OR PERSONAL INJURY CAUSED BY NEGLIGENCE OR FOR FRAUD.
+
+---
+
+## 11. GENERAL
+
+11.1 **Governing Law; Venue.** This Agreement is governed by the laws of the State of Delaware, USA, without regard to conflict-of-laws rules. Any claim arising under this Agreement will be exclusively resolved in the state or federal courts located in Wilmington, Delaware, and the parties consent to personal jurisdiction therein.
+
+11.2 **Export Control.** Customer must comply with all applicable export-control and sanctions laws, including the United States Export Administration Regulations and the Republic of Korea Foreign Trade Act, and shall not export, re-export, or provide the SDK to any sanctioned country, entity, or individual.
+
+11.3 **Assignment.** Customer may not assign or transfer this Agreement, by operation of law or otherwise, without Licensor's prior written consent. Any attempted assignment contrary to this Section 11.3 is void.
+
+11.4 **Entire Agreement & Order of Precedence.** This Agreement constitutes the entire agreement between the parties regarding the SDK and supersedes all prior or contemporaneous agreements or representations. In the event of a conflict between this Agreement and an order form, this Agreement controls unless the order form expressly overrides specific sections by reference.
+
+11.5 **Amendment; Waiver.** Any amendment must be in writing and signed by both parties. No waiver of any breach is deemed a waiver of any other breach.
+
+11.6 **Severability.** If any provision is held unenforceable, the remaining provisions will remain in effect and the invalid provision will be interpreted to fulfil its intended purpose to the maximum extent permitted.
+
+11.7 **Counterparts; Electronic Signatures.** This Agreement may be executed in counterparts, including via electronic signature, each of which is deemed an original and together constitute one instrument.
+
+---
+
+## EXHIBIT A - THIRD-PARTY COMPONENTS
+
+None. The SDK bundles no third-party software that requires separate attribution.
+
+---
+
+## EXHIBIT B - DATA CREDIT METERING RULES
+
+* **Unit:** bytes transmitted by the client.
+* **Unit Changes:** Licensor may revise the accounting unit (e.g., KB, MB, or GB) or the deposit window in a commercially reasonable manner, with at least thirty (30) days' prior notice via the customer portal or email.
+* **Per-message minimum:** 10 KiB.
+* **Deposit window:** When the in-memory deposit pool is insufficient, **1 MB** is debited from the wallet.
+* **Ledger update:** Each successful deposit increments `usedDataMB` by 1 MB.
+* **Idle overhead:** While a session is idle (training setup or simulators waiting), a 1 MB deposit is charged approximately every 5~10 minutes per connection to cover keepalive traffic and reserved resources.
+* **Failure:** If the wallet balance falls below **1 MB**, the SDK raises an **alarm (`credit_exhausted`)**. Users are alerted to their remaining data balance every 5-10 minutes and can monitor live usage on the RemoteRL billing dashboard.
