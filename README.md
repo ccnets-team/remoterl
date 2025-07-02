@@ -1,76 +1,128 @@
-# RemoteRL – Example Scripts
+<p align="center">
+  <img src="images/Frame 1087.png" alt="RemoteRL Logo" width="300"/>
+</p>
 
-This repository contains **concise examples** that demonstrate how to launch simulators and trainers with the RemoteRL client SDK.
+# RemoteRL – Remote Reinforcement Learning Made Easy 🚀
+
+RemoteRL is a lightweight client SDK for remotely running simulators and reinforcement learning (RL) training jobs.  
+It works with **Gymnasium**, **Stable-Baselines3**, and **Ray RLlib** (experimental) backends.  
+You can use the CLI or raw Python scripts to launch your remote RL workflows with minimal configuration.
 
 ---
 
-## 1 · Installation
+## 📦 Installation
 
+Install with your preferred backend:
+
+**Gymnasium only (lightweight):**
 ```bash
-# Gymnasium only (light‑weight)
 pip install remoterl
-
-# + Stable‑Baselines3 extras
-pip install "remoterl[stable-baselines3]"
-
-# + Ray RLlib extras (experimental – may break with some Ray versions)
-# pip install "remoterl[rllib]"   # RLlib support is currently unstable
 ```
 
----
-
-## 2 · Configure your API key
-
-Authenticate in one of two ways:
-
-1. **Interactive CLI (recommended)**
-
-   ```bash
-   remoterl register
-   ```
-
-   A browser window opens – sign up with Google or email, then copy the API key from your dashboard.
-
-2. **Environment variable**
-   Ideal for CI or ad‑hoc sessions:
-
-   ```bash
-   export REMOTERL_API_KEY=api_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
-   ```
-
----
-
-## 3 · Running the examples
-
-### 3.1 · CLI‑only workflow
-
+**With Stable-Baselines3 support:**
 ```bash
-# Start a local simulator (runs until Ctrl‑C)
-remoterl simulate
-
-# In a new terminal – train with the backend of your choice
-remoterl train gym                    # Gymnasium
-remoterl train sb3   --algo PPO       # Stable‑Baselines3
-remoterl train rllib --env CartPole-v1 --num-env-runners 8
+pip install "remoterl[stable-baselines3]"
 ```
 
-Additional flags are forwarded directly to the underlying backend. Run:
+**With Ray RLlib support (experimental):**
+```bash
+# pip install "remoterl[rllib]"
+```
+> ⚠️ RLlib support is currently experimental and may break with certain Ray versions.
 
+---
+
+## 🔐 Configure Your API Key
+
+Before you begin, set your RemoteRL API key. You can do this in two ways:
+
+### 1. Interactive CLI (Recommended)
+```bash
+remoterl register
+```
+A browser window will open. Sign in using Google or email, then copy your API key from your RemoteRL dashboard.
+
+### 2. Environment Variable (ideal for CI or quick runs)
+```bash
+export REMOTERL_API_KEY=api_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+```
+
+---
+
+## 🚀 Quickstart
+
+### Option A · CLI-only Workflow
+
+Start the simulator:
+```bash
+remoterl simulate
+```
+
+In a new terminal, start training using one of the supported backends:
+
+- **Gymnasium**
+  ```bash
+  remoterl train gym
+  ```
+
+- **Stable-Baselines3**
+  ```bash
+  remoterl train sb3 --algo PPO
+  ```
+
+- **Ray RLlib (experimental)**
+  ```bash
+  remoterl train rllib --env CartPole-v1 --num-env-runners 8
+  ```
+
+👉 All arguments are passed through to the backend. Run:
 ```bash
 remoterl train <backend> --help
 ```
-
-for the full list.
-
-### 3.2 · Running the raw Python scripts
-
-```bash
-python simulate_remote.py             # simulator
-python train_gym_cartpole.py          # trainer – Gymnasium
-python train_sb3_cartpole.py          # trainer – Stable‑Baselines3
-python train_rllib_cartpole.py        # trainer – RLlib
-```
+for full options.
 
 ---
 
-Happy remote training! 🚀
+### Option B · Python Scripts
+
+Prefer to launch via Python scripts? Use the built-in examples:
+
+- **Simulator**
+  ```bash
+  python simulate_remote.py
+  ```
+
+- **Trainer (Gymnasium)**
+  ```bash
+  python train_gym_cartpole.py
+  ```
+
+- **Trainer (Stable-Baselines3)**
+  ```bash
+  python train_sb3_cartpole.py
+  ```
+
+- **Trainer (Ray RLlib, experimental)**
+  ```bash
+  python train_rllib_cartpole.py
+  ```
+
+---
+
+## 🧠 Why RemoteRL?
+
+- 🚀 **Launch RL training remotely** in seconds  
+- 🧩 **Modular CLI and SDK** — works with your preferred backend  
+- ⚡ **No infrastructure setup required** — connect via API key and go  
+- 🧪 **Simple examples** to help you get started fast
+
+---
+
+## 📄 License
+
+This project is licensed under the [Apache 2.0 License](LICENSE).
+
+---
+
+**Happy remote training!** 🎯
+
