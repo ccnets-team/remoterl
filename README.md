@@ -1,14 +1,22 @@
 <p align="center">
-  <img src="images/Frame 1087.png" alt="RemoteRL Logo" width="300"/>
+  <img src="https://github.com/user-attachments/assets/973a48c3-829c-4b4c-9479-48341ba518a4" alt="RemoteRL Banner" style="max-width:100%; height:auto;"/>
 </p>
 
 # RemoteRL – Remote Reinforcement Learning Made Easy 🚀
+
 
 RemoteRL is a lightweight client SDK for remotely running simulators and reinforcement learning (RL) training jobs.  
 It works with **Gymnasium**, **Stable-Baselines3**, and **Ray RLlib** (experimental) backends.  
 You can use the CLI or raw Python scripts to launch your remote RL workflows with minimal configuration.
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/c4249d58-7548-46e4-9888-c99b8260998b" alt="Frame 1080" width="1000"/>
+</p>
+
 ---
+
+
+
 
 ## 📦 Installation
 
