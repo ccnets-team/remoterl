@@ -34,9 +34,8 @@ pip install "remoterl[stable-baselines3]"
 
 **With Ray RLlib support (experimental):**
 ```bash
-# pip install "remoterl[rllib]"
+pip install "remoterl[rllib]" torch
 ```
-> ⚠️ RLlib support is currently experimental and may break with certain Ray versions.
 
 ---
 
@@ -128,7 +127,7 @@ Prefer to launch via Python scripts? Use the built-in examples:
 
 ## 📄 License
 
-This project is licensed under the [Apache 2.0 License](LICENSE).
+This project is licensed under the [COMMERCIAL LICENSE AGREEMENT](LICENSE).
 
 ---
 
