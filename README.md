@@ -2,7 +2,7 @@
   <img src="https://github.com/user-attachments/assets/973a48c3-829c-4b4c-9479-48341ba518a4" alt="RemoteRL Banner" style="max-width:100%; height:auto;"/>
 </p>
 
-# RemoteRL – Remote Reinforcement Learning Made Easy 🚀
+# RemoteRL – Remote Reinforcement Learning for Everyone, Everywhere 🚀
 
 
 RemoteRL is a lightweight client SDK for remotely running simulators and reinforcement learning (RL) training jobs.  
