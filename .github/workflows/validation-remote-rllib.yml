@@ -1,5 +1,5 @@
-# GitHub Actions — validation-remote-stable-baselines3
-name: validation-remote-stable-baselines3
+# GitHub Actions — validation-remote-rllib
+name: validation-remote-rllib
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 30
 
     env:
-      REMOTERL_API_KEY: ${{ secrets.REMOTERL_API_KEY }}
+      REMOTERL_API_KEY: ${{ secrets.REMOTERL_API_KEY_RLLIB }}
 
     steps:
       - uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
 
       # ────────────── Install RemoteRL SDK  ────────────── 
       - name: Install RemoteRL (core)
-        run: python -m pip install --no-cache-dir "remoterl[stable-baselines3]"
+        run: python -m pip install --no-cache-dir "remoterl[rllib]" torch
 
       # ────────────── Simulator (background) ──────────────
       - name: Launch simulator (4‑min timeout)
@@ -50,10 +50,10 @@ jobs:
 
           sleep 10  # Give it time to start
 
-      # ────────────── Train (Stable-Baselines3) ──────────────
+      # ────────────── Train (rllib) ──────────────
       - name: Train (gym core)
         shell: bash
-        run: timeout 600s remoterl train stable-baselines3 --env_id CartPole-v1 --total-timesteps 20000
+        run: timeout 600s remoterl train rllib --env CartPole-v1 --num-env-runners 16
 
       # ────────────── Teardown simulator ──────────────
       - name: Stop simulator (Unix ‑ Ctrl+C)
