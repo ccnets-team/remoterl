@@ -1,0 +1,80 @@
+# GitHub Actions — validation-remote-stable-baselines3
+name: validation-remote-stable-baselines3
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.12"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    env:
+      REMOTERL_API_KEY: ${{ secrets.REMOTERL_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # ────────────── Install RemoteRL SDK  ────────────── 
+      - name: Install RemoteRL (core)
+        run: python install "remoterl[stable-baselines3]"
+
+      # ────────────── Simulator (background) ──────────────
+      - name: Launch simulator (4‑min timeout)
+        shell: bash
+        run: |
+          # macOS needs gtimeout; alias if missing.
+          if [[ "${{ runner.os }}" == "macOS" && ! $(command -v timeout) ]]; then
+            brew install coreutils
+            alias timeout='gtimeout'
+          fi
+
+          # Start simulator; save PID
+          timeout 1000s remoterl simulate --headless &
+          SIM_PID=$!
+          echo "SIM_PID=$SIM_PID" >> $GITHUB_ENV
+
+          sleep 10  # Give it time to start
+
+      # ────────────── Train (Stable-Baselines3) ──────────────
+      - name: Train (gym core)
+        shell: bash
+        run: timeout 600s remoterl train stable-baselines3
+
+      # ────────────── Teardown simulator ──────────────
+      - name: Stop simulator (Unix ‑ Ctrl+C)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          # Send SIGINT (Ctrl+C) for graceful shutdown
+          kill -SIGINT $SIM_PID || true
+
+          # Wait up to 10 s for it to exit
+          for i in {1..10}; do
+            ps -p $SIM_PID > /dev/null || exit 0
+            sleep 1
+          done
+
+          # Fall back to TERM if still alive
+          kill -SIGTERM $SIM_PID || true
+
+      - name: Stop simulator (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Ctrl+C equivalent isn’t exposed; force‑stop as last resort
+          Stop-Process -Id $env:SIM_PID -Force -ErrorAction SilentlyContinue
