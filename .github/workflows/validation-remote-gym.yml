@@ -34,7 +34,7 @@ jobs:
         run: python -m pip install --no-cache-dir remoterl
 
       # ────────────── Simulator (background) ──────────────
-      - name: Launch simulator (1000s timeout)
+      - name: Launch simulator (20m timeout)
         shell: bash
         run: |
           # macOS needs gtimeout; alias if missing.
@@ -44,7 +44,7 @@ jobs:
           fi
 
           # Start simulator; save PID
-          timeout 1000s remoterl simulate --headless &
+          timeout 20m remoterl simulate --headless &
           SIM_PID=$!
           echo "SIM_PID=$SIM_PID" >> $GITHUB_ENV
 
@@ -53,7 +53,7 @@ jobs:
       # ────────────── Train ──────────────
       - name: Train (gym core)
         shell: bash
-        run: remoterl train --env_id CartPole-v1 --num_envs 64
+        run: remoterl train gym --env_id CartPole-v1 --num_envs 64
 
       # ────────────── Teardown simulator ──────────────
       - name: Stop simulator (Unix ‑ Ctrl+C)
