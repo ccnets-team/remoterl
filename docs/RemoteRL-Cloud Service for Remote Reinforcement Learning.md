@@ -15,7 +15,7 @@ RemoteRL provides a number of features to make remote and distributed RL **easy 
 
 * **Zero-Setup Integration:** It works out-of-the-box with popular Python RL libraries. Users simply install the `remoterl` Python package and add a one-line initialization with their API key to an existing Gymnasium or RLlib script – *“Run `pip install remoterl` and add `remoterl.init(API_KEY="…")` to any Gymnasium / Ray RLlib script, and hit run — no rewrites, zero friction”*. This means **no extensive code refactoring or complex cluster setup** is required; RemoteRL hooks into the RL frameworks to handle remote environment communication transparently.
 
-* **Framework and Tool Support:** The service **auto-integrates with popular RL frameworks** like **OpenAI Gymnasium (Gym)** for environment interfaces and **Ray RLlib** for distributed training algorithms. It also supports integration with libraries like **Stable-Baselines3**, as indicated by the client’s tags/extras. This broad support allows developers to use familiar APIs and algorithms (e.g. RLlib’s trainers or Stable-Baselines3’s agents) while RemoteRL manages the remote execution of environments. Whether you use custom Gym environments or standard ones, or whether you train with RLlib’s scalable architecture or a single-agent approach, RemoteRL can plug in with minimal changes.
+* **Framework and Tool Support:** The service **auto-integrates with popular RL frameworks** like **OpenAI Gymnasium (Gym)** for environment interfaces and **Ray RLlib** for distributed training algorithms. It also supports integration with libraries like **Stable-Baselines3**. This broad support allows developers to use familiar APIs and algorithms (e.g. RLlib’s trainers or Stable-Baselines3’s agents) while RemoteRL manages the remote execution of environments. Whether you use custom Gym environments or standard ones, or whether you train with RLlib’s scalable architecture or a single-agent approach, RemoteRL can plug in with minimal changes.
 
 * **Live Web Dashboard & Monitoring:** RemoteRL provides a **web‑based dashboard** that shows which simulators and trainers are online alongside basic byte/step counters. When you add `remoterl.init(API_KEY="…")` to a process, it appears on the dashboard within seconds. The dashboard displays **connection status only**—RemoteRL does **not** view, store, or inspect observation, reward, or model payloads. Operators can disconnect a simulator or temporarily block new sessions, and any configuration changes apply the next time a pipeline starts; they cannot peek into in‑flight data nor pause individual training iterations.
   
@@ -29,9 +29,17 @@ RemoteRL provides a number of features to make remote and distributed RL **easy 
 
 At a high level, RemoteRL follows a **client–server architecture specialized for RL**. The **core components** are defined as follows:
 
-* **Trainer:** The cloud-hosted component (managed by RemoteRL) that runs the RL algorithm. It is responsible for receiving state/reward data from simulators, computing the next action or updating the policy (model weights), and sending actions or new policy parameters back to the simulators. The trainer can scale across multiple machines in the cloud to handle many simulators in parallel, utilizing frameworks like Ray RLlib for distributed training logic. This means under the hood your training job might be spread across CPU/GPU workers to accelerate learning, but all of that is abstracted away by the service.
+* **Trainer:** The RL algorithm process that you run and manage (e.g., on your own cloud instances, on-prem servers, or a laptop). RemoteRL simply provides the networking bridge: it relays state/reward data from simulators to your trainer and returns actions. You can still scale the trainer across multiple machines—using Ray RLlib or similar frameworks—while RemoteRL abstracts away the connection details, not the computation itself.
 
-* **Simulator:** The client-side component, which is essentially the RL **environment process**. This could be a simulation program (e.g., a game engine, robotics simulator, custom environment code) or a real-world data source (e.g., a robot’s control loop or an IoT device sending sensor readings). The simulator runs wherever you choose (local machine, edge device, or even another cloud), and connects out to the RemoteRL service via a secure WebSocket channel. Its role is to generate observations and rewards in response to agent actions, just like a normal Gym environment would, except that these interactions happen over the network.
+* **Simulator:** The environment process you run and whether it’s a game engine, robotics simulator, custom code, or a real-world device such as a robot control loop or IoT sensor. It can live anywhere: on a local machine, an edge device, or another cloud. The simulator connects to RemoteRL over a secure WebSocket, streaming observations and rewards to your trainer and receiving actions in return. Functionally it behaves like any Gym environment; the only difference is that these interactions travel across the network through RemoteRL’s bridge.
+
+```python
+import gymnasium as gym
+import remoterl 
+
+remoterl.init(API_KEY="YOUR_KEY", role="trainer")
+env = gym.make("Humanoid-v5")  # this environment runs remotely in another city
+```
 
 **Communication:** When you integrate RemoteRL, the typical RL loop is split between the trainer and simulator via the network:
 
