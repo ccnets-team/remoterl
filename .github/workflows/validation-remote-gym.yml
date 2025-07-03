@@ -53,7 +53,7 @@ jobs:
       # ────────────── Train ──────────────
       - name: Train (gym core)
         shell: bash
-        run: remoterl train gym --env_id CartPole-v1 --num_envs 64
+        run: remoterl train gym
 
       # ────────────── Teardown simulator ──────────────
       - name: Stop simulator (Unix ‑ Ctrl+C)
