@@ -30,11 +30,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       # ────────────── Install RemoteRL SDK  ────────────── 
-      - name: Install RemoteRL (core)
-        run: python -m pip install --no-cache-dir "remoterl[stable-baselines3]"
+      - name: Install RemoteRL 
+        run: python -m pip install --no-cache-dir remoterl stable-baselines3 "gymnasium[mujoco]"
 
       # ────────────── Simulator (background) ──────────────
-      - name: Launch simulator (4‑min timeout)
+      - name: Launch simulator (25m timeout)
         shell: bash
         run: |
           # macOS needs gtimeout; alias if missing.
@@ -44,16 +44,16 @@ jobs:
           fi
 
           # Start simulator; save PID
-          timeout 1000s remoterl simulate --headless &
+          timeout 25m remoterl simulate --headless &
           SIM_PID=$!
           echo "SIM_PID=$SIM_PID" >> $GITHUB_ENV
 
-          sleep 10  # Give it time to start
+          sleep 60  # Give it immigration time to another global region if needs
 
       # ────────────── Train (Stable-Baselines3) ──────────────
       - name: Train (gym core)
         shell: bash
-        run: timeout 600s remoterl train stable-baselines3 --env_id CartPole-v1 --total-timesteps 20000
+        run: remoterl train stable-baselines3 --env_id Humanoid-v5 --algo PPO --n_envs 128 --total-timesteps 20000
 
       # ────────────── Teardown simulator ──────────────
       - name: Stop simulator (Unix ‑ Ctrl+C)
