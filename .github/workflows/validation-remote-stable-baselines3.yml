@@ -31,7 +31,7 @@ jobs:
 
       # ────────────── Install RemoteRL SDK  ────────────── 
       - name: Install RemoteRL (core)
-        run: python install "remoterl[stable-baselines3]"
+        run: python -m pip install --no-cache-dir "remoterl[stable-baselines3]"
 
       # ────────────── Simulator (background) ──────────────
       - name: Launch simulator (4‑min timeout)
