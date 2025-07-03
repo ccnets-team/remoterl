@@ -37,7 +37,7 @@ At a high level, RemoteRL follows a **client–server architecture specialized f
 import gymnasium as gym
 import remoterl 
 
-remoterl.init(API_KEY="YOUR_KEY", role="trainer")
+remoterl.init(api_key="YOUR_KEY", role="trainer")
 env = gym.make("Humanoid-v5")  # this environment runs remotely in another city
 ```
 
