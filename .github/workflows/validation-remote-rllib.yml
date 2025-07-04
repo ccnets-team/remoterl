@@ -13,13 +13,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [windows-latest]
         python-version: ["3.11"]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
 
     env:
-      REMOTERL_API_KEY: ${{ secrets.REMOTERL_API_KEY_RLLIB }}
+      REMOTERL_API_KEY: ${{ secrets.REMOTERL_API_KEY }}
 
     steps:  
       - uses: actions/checkout@v4
