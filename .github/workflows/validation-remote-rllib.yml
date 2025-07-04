@@ -19,9 +19,9 @@ jobs:
     timeout-minutes: 30
 
     env:
-      REMOTERL_API_KEY: ${{ secrets.REMOTERL_API_KEY_RLLIB }}
+      REMOTERL_API_KEY: ${{ secrets.REMOTERL_API_KEY }}
 
-    steps:
+    steps:  
       - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
@@ -36,7 +36,7 @@ jobs:
           python -m pip install --no-cache-dir \
             -i https://test.pypi.org/simple/ \
             --extra-index-url https://pypi.org/simple \
-            "remoterl==1.1.2" "ray[rllib]==2.42.*" torch
+            "remoterl==1.1.2" "ray[rllib]==2.42.*" torch pillow
 
       # ────────────── Simulator (background) ──────────────
       - name: Launch simulator (20min timeout)
