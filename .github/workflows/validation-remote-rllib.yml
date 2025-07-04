@@ -30,11 +30,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       # ────────────── Install RemoteRL SDK  ────────────── 
-      - name: Install RemoteRL
-        run: python -m pip install --no-cache-dir \
+      - name: Install RemoteRL 
+        shell: bash          # ← ensure bash even on windows-latest
+        run: |
+          python -m pip install --no-cache-dir \
             -i https://test.pypi.org/simple/ \
             --extra-index-url https://pypi.org/simple \
-            "remoterl[rllib]==1.1.2" "ray[rllib]==2.42.*" torch
+            "remoterl==1.1.2" "ray[rllib]==2.42.*" torch
 
       # ────────────── Simulator (background) ──────────────
       - name: Launch simulator (20min timeout)
