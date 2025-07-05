@@ -58,7 +58,7 @@ jobs:
       # ────────────── Train (rllib) ──────────────
       - name: Train (gym core)
         shell: bash
-        run: timeout 20m remoterl train rllib --env CartPole-v1 --num-env-runners 16
+        run: timeout 20m remoterl train rllib --env CartPole-v1 --num-env-runners 2
 
       # ────────────── Teardown simulator ──────────────
       - name: Stop simulator (Unix ‑ Ctrl+C)
