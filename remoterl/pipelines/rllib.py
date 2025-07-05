@@ -8,14 +8,15 @@ try:
     import ray  # noqa: F401
     # Pull in one canonical RLlib symbol to verify the sub-package
     from ray.rllib.algorithms import AlgorithmConfig  # noqa: F401
-    from ray.tune.registry import get_trainable_cls    
+    from ray.tune.registry import get_trainable_cls, _global_registry    
 
 except (ModuleNotFoundError, ImportError) as err:  # pragma: no cover
     raise ModuleNotFoundError(
         "Backend 'rllib' selected but Ray RLlib is not installed.\n"
         "Install it with:\n\n"
-        "    pip install 'remterl[rllib]' or \n"
-        "    pip install 'ray[rllib]==2.42.0' \n"
+        "    pip install 'ray[rllib]' or \n"
+        "    pip install 'ray[rllib]' torch pillow (if you need PyTorch and PPO)\n"
+        "    ray[rllib] after 2.44.0 may cause issues with windows in general.\n"
     ) from err
     
 def _canonical(anno):
@@ -70,14 +71,12 @@ def ensure_default_hyperparams(hyperparams: dict) -> dict:
     # ➋ All other defaults.
     defaults = {
         "env":                     env_val,
-        "num_env_runners":         4,
+        "num_env_runners":         2,
         "num_envs_per_env_runner": 16,
         "num_epochs":              20,
         "train_batch_size":        1_000,
         "minibatch_size":          256,
         "lr":                      1e-3,
-        "num_learners":            1,
-        "num_gpus_per_learner":    1,
         "rollout_fragment_length": "auto",
         "sample_timeout_s":        None,
         "enable_rl_module_and_learner": False,
@@ -142,7 +141,7 @@ def configure_algorithm(hyperparams: Dict[str, Any]) -> Union[AlgorithmConfig, D
             # ② Unbound (class-level) method: used for parameter filtering
             unbound_method = getattr(AlgorithmConfig, section, None)
 
-            if callable(bound_method):
+            if callable(bound_method) and callable(unbound_method):
                 # Safely filter using the class-level signature
                 kwargs = filter_config(unbound_method, hyperparams)
                 # Actual call is via the instance method
@@ -153,7 +152,34 @@ def configure_algorithm(hyperparams: Dict[str, Any]) -> Union[AlgorithmConfig, D
 
     return algo_config
 
+def smart_get_trainable(name: str):
+    """
+    Try a handful of name variants plus any known algorithms already
+    registered with Ray Tune before raising a fatal error.
+    """
+    # ①  Fast-path – the exact name the caller supplied
+    variants = [name, name.upper(), name.lower(), name.capitalize()]
 
+    # ②  Add whatever is registered in the current process
+    variants += list(_global_registry._to_trainable.keys())   # RLlib ≥2.7
+    # (older RLlib: use `_trainable_class_registry` instead)
+
+    tried = set()
+    for cand in variants:
+        if cand in tried:
+            continue
+        tried.add(cand)
+        try:
+            return get_trainable_cls(cand), cand
+        except Exception:
+            continue
+
+    # Still nothing → propagate the original name in the error message
+    raise RuntimeError(
+        f"RLlib does not recognise trainable '{name}'. "
+        f"Tried: {', '.join(sorted(tried))}"
+    )
+    
 def print_cluster_resources():
     # Get available cluster resources from Ray
     resources = ray.cluster_resources()
@@ -188,11 +214,7 @@ def train_rllib(hyperparams: Dict[str, Any]):
     # ────────────────────────────────────────────────────────────────────
 
     # Finally, initialise Ray with the filtered kwargs
-    ray.init(**ensure_ray_init_args({
-        "runtime_env": {"working_dir": os.path.dirname(os.path.abspath(__file__))},
-        "ignore_reinit_error": True,
-        "log_to_driver": False,
-    }, ))
+    ray.init(**ensure_ray_init_args(hyperparams))
     
     print_cluster_resources()
 
@@ -216,8 +238,14 @@ def train_rllib(hyperparams: Dict[str, Any]):
         # Modern builder API (AlgorithmConfig has .build_algo)
         algo = algo_config.build_algo()  # type: ignore[attr-defined]
     except AttributeError:
-        # Legacy dict path
-        algo = get_trainable_cls(trainable_name)(config=algo_config)
+        # Older RLlib: config object has no .build_algo()
+        # Rotate through name variants that are already registered
+        trainable_cls, rotated_name = smart_get_trainable(trainable_name)
+
+        # Very old RLlib trainers expect a *dict* rather than AlgorithmConfig
+        raw_cfg = algo_config if isinstance(algo_config, dict) else algo_config.to_dict()
+        algo = trainable_cls(config=raw_cfg)
+        trainable_name = rotated_name        # optional: keep it for logging
 
     # -------------------------------------------------------------------
     # 5️⃣  Train, handle any runtime errors gracefully
