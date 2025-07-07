@@ -31,10 +31,10 @@ def init(
         RemoteRL Cloud API key.  May be *None* when using an on-premise hub.
     role
         Either ``"trainer"`` or ``"simulator"``.
-    num_workers
-        Worker processes to spawn when acting as a trainer.
-    num_env_runners
-        Environment-runner tasks per simulator when acting as a trainer.
+    num_workers[only trainer parameter]
+        Number of local workers to launch.  Defaults to **1**.
+    num_env_runners[only trainer parameter]
+        Number of remote environment-runner processes to launch.  Defaults to **2**.
 
     Raises
     ------

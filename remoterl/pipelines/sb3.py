@@ -1,77 +1,35 @@
 #!/usr/bin/env python3
 """
-sb3_backend.py – Stable-Baselines3 backend with RLlib-style meta structure
+sb3.py – Stable-Baselines3 framework with RLlib-style meta structure
 ============================================================================
-Drop-in replacement for the older, smaller sb3_backend.py.
 
 Key points
 ----------
 * Pure **plain-dict API** → `train_sb3(hyperparams: dict)`.
 * Internal helpers (`filter_config`, `ensure_default_hyperparams`) match those
-  in rllib_backend.py so all back-ends feel the same.
+  in rllib.py so all back-ends feel the same.
 * Works across SB3 releases ≥ 1.6.
 * No external `sb3_config.py` needed – everything lives in this file.
 """
 from __future__ import annotations
 
-import inspect
 from pathlib import Path
-from typing import Any, Dict, Union, get_origin, get_args
-
+from typing import Any, Dict
 import typer
 
 try:
     import stable_baselines3 as sb3
 except ModuleNotFoundError as err:  # pragma: no cover
     raise ModuleNotFoundError(
-        "Backend 'sb3' selected but *stable-baselines3* is not installed.\n"
+        "RL Framework 'sb3' selected but *stable-baselines3* is not installed.\n"
         "Install it with:\n\n"
         "    pip install stable-baselines3[extra]\n"
     ) from err
+from .helpers import filter_config
 
 # -----------------------------------------------------------------------------
 # ─────────────────────────── 1. Utility helpers ──────────────────────────────
 # -----------------------------------------------------------------------------
-def _canonical(anno):
-    """
-    Return the concrete runtime type we should cast to
-    (e.g. Optional[int] -> int, Union[int, str] -> (int, str)).
-    """
-    if anno is inspect._empty:
-        return None                      # no annotation → leave as-is
-    origin = get_origin(anno)
-    if origin is Union:                  # Optional[...] or other unions
-        args = [a for a in get_args(anno) if a is not type(None)]
-        return args[0] if len(args) == 1 else tuple(args)
-    return anno
-
-def filter_config(func, cfg: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Sub-set *cfg* to parameters accepted by *func* **and**
-    try to co-erce basic types (int, float, bool, str) to match annotations.
-    """
-    sig = inspect.signature(func)
-    out = {}
-    for k, v in cfg.items():
-        if k not in sig.parameters or k == "self":
-            continue
-
-        tgt = _canonical(sig.parameters[k].annotation)
-        if tgt in (int, float, str):
-            try:
-                v = tgt(v)
-            except Exception:
-                pass                       # keep original; let SB3 complain
-        elif tgt is bool:
-            if isinstance(v, str):
-                if v.lower() in {"true", "1", "yes", "y"}:
-                    v = True
-                elif v.lower() in {"false", "0", "no", "n"}:
-                    v = False
-
-        out[k] = v
-    return out
-
 
 def guess_ppo_hyperparams(n_envs, max_episode_steps, target_rollout: int = 2048) -> tuple[int, int]:
     '''Heuristic for (n_steps, n_epochs) based on env length & parallelism.'''
@@ -103,7 +61,7 @@ def ensure_default_hyperparams(hp: Dict[str, Any]) -> Dict[str, Any]:
         "n_envs": 32,
         "algo": "PPO",
         "policy": "MlpPolicy",
-        "total_timesteps": 200_000,
+        "total_timesteps": 100_000,
         # ----- PPO specifics -----
         "batch_size": 64,
         "gamma": 0.99,
@@ -177,7 +135,7 @@ def train_sb3(hyperparams: Dict[str, Any]) -> None:
     # ------------------------------------------------------------------
     # 2) Algorithm selection
     # ------------------------------------------------------------------
-    algo_cls = _ALGOS.get(hyperparams.get("algo"), sb3.PPO)
+    algo_cls = _ALGOS.get(str(hyperparams.get("algo")).upper(), sb3.PPO)
     model_cfg = filter_config(algo_cls, hyperparams)
     policy = model_cfg.pop("policy", "MlpPolicy")  # default policy
     typer.echo(f"[INFO] Using algorithm: {algo_cls.__name__} with policy: {policy} \

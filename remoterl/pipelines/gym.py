@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""gym.py – Step‑based Gymnasium backend for RemoteRL
+"""gym.py - Step-based Gymnasium RL Framework for RemoteRL
 ================================================================
 This revision removes the *episode* outer‑loop and instead runs for a fixed
 number of **steps** (across all vectorised environments).  Many modern
@@ -13,38 +13,32 @@ Pass ``total_steps`` instead of ``num_episodes`` when calling
 ``train_gym({...})``.  Defaults to **50 000** steps if omitted.
 
 The live report now prints:
-* **inst_fps** – instantaneous steps/sec (over the last interval)
-* **avg_fps**  – average steps/sec since the start
-* **steps**    – total environment steps executed so far
+* **inst_fps** - instantaneous steps/sec (over the last interval)
+* **avg_fps**  - average steps/sec since the start
+* **steps**    - total environment steps executed so far
 """
 from __future__ import annotations
 
-import inspect
 import time
 from typing import Any, Dict
 
 import numpy as np
 import typer
 import gymnasium as gym
+from .helpers import filter_config
 
 ###############################################################################
 # Utility helpers
 ###############################################################################
 
-def _filter_config(func, cfg: Dict[str, Any]) -> Dict[str, Any]:
-    """Return only the kwargs that *func* actually accepts."""
-    allowed = {p for p in inspect.signature(func).parameters if p != "self"}
-    return {k: v for k, v in cfg.items() if k in allowed}
-
-
 def _create_env(env_id: str, num_envs: int, **env_kwargs):
     """Construct a SyncVectorEnv when *num_envs* > 1, else a single env."""
     if num_envs is not None and num_envs > 0:
         num_envs = int(num_envs)
-        env = gym.make_vec(env_id, num_envs=num_envs, **_filter_config(gym.make_vec, env_kwargs))
+        env = gym.make_vec(env_id, num_envs=num_envs, **filter_config(gym.make_vec, env_kwargs))
         typer.echo("Vectorised env mode")
     else:
-        env = gym.make(env_id, **_filter_config(gym.make, env_kwargs))
+        env = gym.make(env_id, **filter_config(gym.make, env_kwargs))
         typer.echo("Single env mode")
     return env
 
