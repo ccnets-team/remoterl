@@ -1,0 +1,81 @@
+# GitHub Actions — Validate Python SDK
+name: Validate Python SDK
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: [self-hosted, Linux, X64, "remoterl"]  # Custom self‑hosted runner
+            api_secret: REMOTERL_API_KEY
+        python-version: ["3.11"]
+
+    timeout-minutes: 60
+    runs-on: ${{ matrix.os }}
+    env:
+      REMOTERL_API_KEY: ${{ secrets[matrix.api_secret] }}
+
+    steps:
+      # ────────────── Checkout ──────────────
+      - uses: actions/checkout@v4
+
+      # ────────────── System Python (pyenv) ──────────────
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # ────────────── Install deps & global env ──────────────
+      - name: Install SDK & Stable-Baselines3 with Mujoco
+        shell: bash
+        run: |
+          set -euxo pipefail
+          pip install --upgrade pip
+          pip install --no-cache-dir \
+              remoterl stable-baselines3 gymnasium[mujoco] \
+
+      # ────────────── Launch simulator (background) ──────────────
+      - name: Launch simulator (50 min timeout)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if [[ "${{ runner.os }}" == "macOS" && ! $(command -v timeout) ]]; then
+            brew install coreutils
+            alias timeout='gtimeout'
+          fi
+
+          timeout 50m remoterl simulate --headless &
+          SIM_PID=$!
+          echo "SIM_PID=$SIM_PID" >> "$GITHUB_ENV"
+          sleep 10  # give it time to start
+
+      # ────────────── Train with Stable‑Baselines3 ──────────────
+      - name: Train with Stable-Baselines3
+        shell: bash
+        run: |
+          set -euxo pipefail
+          timeout --foreground 40m remoterl train stable-baselines3 \
+              --env_id Walker2d-v5 --total-timesteps 20000 --num-env-runners 4
+
+      # ────────────── Teardown simulator ──────────────
+      - name: Stop simulator (graceful Ctrl+C)
+        shell: bash
+        run: |
+          set +e
+          kill -SIGINT "$SIM_PID" || true
+          for i in {1..10}; do
+            if ! ps -p "$SIM_PID" >/dev/null 2>&1; then
+              echo "Simulator exited."
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Still alive - sending SIGTERM"
+          kill -SIGTERM "$SIM_PID" || true
