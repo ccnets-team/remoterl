@@ -12,9 +12,7 @@ directly.
 
 # remoterl/__init__.py
 from typing import Optional, Literal
-from ._internal.bootstrap import init_remoterl
-from ._internal.shutdown import shutdown_remoterl
-
+from remoterl import init as init_remoterl, shutdown as shutdown_remoterl
 
 def init(
     api_key: Optional[str],
