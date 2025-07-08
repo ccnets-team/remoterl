@@ -18,7 +18,7 @@
 
 <div align="center">
 
-Simulator(s)/Robot(s)&emsp;&emsp;&emsp;⇄&emsp;&emsp;&emsp;🌐 RemoteRL Relay&emsp;&emsp;&emsp;⇄&emsp;&emsp;&emsp;Trainer (GPU/Laptop)
+Simulator(s)/Robot(s)&emsp;⇄&emsp;🌐 RemoteRL Relay&emsp;⇄&emsp;Trainer (GPU/Laptop)
 
 </div>
 
@@ -74,8 +74,9 @@ $ remoterl simulate
 # Terminal B – trainer
 $ remoterl train 
 ```
-
+  
 <details>
+
 <summary><code>remoterl simulate</code> — Python example</summary>
 
 ```python

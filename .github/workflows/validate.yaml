@@ -16,9 +16,9 @@ jobs:
         include:
           - os: [self-hosted, Linux, X64, remoterl]  # Custom self‑hosted runner
             api_secret: REMOTERL_API_KEY
-        python-version: ["3.11"]
+        python-version: ["3.12"]
 
-    timeout-minutes: 60
+    timeout-minutes: 240
     runs-on: ${{ matrix.os }}
     env:
       REMOTERL_API_KEY: ${{ secrets[matrix.api_secret] }}
@@ -42,40 +42,72 @@ jobs:
               remoterl stable-baselines3 gymnasium[mujoco] \
 
       # ────────────── Launch simulator (background) ──────────────
-      - name: Launch simulator (50 min timeout)
+      - name: Launch simulators (4x, 230 min timeout)
         shell: bash
         run: |
           set -euxo pipefail
-          if [[ "${{ runner.os }}" == "macOS" && ! $(command -v timeout) ]]; then
+
+          # GitHub-hosted macOS runners need gtimeout instead of timeout(1)
+          if [[ "${{ runner.os }}" == "macOS" ]] && ! command -v timeout >/dev/null; then
             brew install coreutils
             alias timeout='gtimeout'
           fi
 
-          timeout 50m remoterl simulate --headless &
-          SIM_PID=$!
-          echo "SIM_PID=$SIM_PID" >> "$GITHUB_ENV"
-          sleep 10  # give it time to start
+          # Start four background simulator processes, record each PID
+          declare -a SIM_PIDS=()
+          for i in {1..4}; do
+            timeout 230m remoterl simulate --headless &
+            SIM_PIDS+=($!)
+            echo "Started simulator $i with PID=${SIM_PIDS[-1]}"
+            sleep 5      # small stagger helps avoid port clashes
+          done
+
+          # Expose the space-separated list so later steps can read it
+          echo "SIM_PIDS=${SIM_PIDS[*]}" >> "$GITHUB_ENV"
+          # Optional: also export individual PID_n vars if you ever need them
+          for idx in "${!SIM_PIDS[@]}"; do
+            echo "SIM_PID_${idx}=${SIM_PIDS[$idx]}" >> "$GITHUB_ENV"
+          done
 
       # ────────────── Train with Stable‑Baselines3 ──────────────
       - name: Train with Stable-Baselines3
         shell: bash
         run: |
           set -euxo pipefail
-          timeout --foreground 40m remoterl train stable-baselines3 \
-              --env_id Walker2d-v5 --total-timesteps 20000 --num-env-runners 4
+          timeout --foreground 220m remoterl train stable-baselines3 \
+              --env_id Walker2d-v5 --algo PPO \
+              --total-timesteps 1000000 \
+              --n_envs 128 --batch_size 128 \
+              --num-env-runners 16 --num-workers 4
 
       # ────────────── Teardown simulator ──────────────
-      - name: Stop simulator (graceful Ctrl+C)
+      - name: Stop simulators (graceful Ctrl-C)
+        if: ${{ always() }}      # run even if earlier steps failed
         shell: bash
         run: |
           set +e
-          kill -SIGINT "$SIM_PID" || true
-          for i in {1..10}; do
-            if ! ps -p "$SIM_PID" >/dev/null 2>&1; then
-              echo "Simulator exited."
-              exit 0
-            fi
-            sleep 1
+
+          # Iterate through the list saved in the previous step
+          for pid in $SIM_PIDS; do
+            echo "Sending SIGINT to simulator PID=$pid"
+            kill -SIGINT "$pid" || true
           done
-          echo "Still alive - sending SIGTERM"
-          kill -SIGTERM "$SIM_PID" || true
+
+          # Give each process up to 10 s to exit
+          for pid in $SIM_PIDS; do
+            for i in {1..10}; do
+              if ! ps -p "$pid" >/dev/null 2>&1; then
+                echo "Simulator $pid exited."
+                break
+              fi
+              sleep 1
+            done
+          done
+
+          # Escalate with SIGTERM for anything still running
+          for pid in $SIM_PIDS; do
+            if ps -p "$pid" >/dev/null 2>&1; then
+              echo "Simulator $pid still alive - sending SIGTERM"
+              kill -SIGTERM "$pid" || true
+            fi
+          done
