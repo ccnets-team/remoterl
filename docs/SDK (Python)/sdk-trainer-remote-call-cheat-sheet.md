@@ -1,4 +1,4 @@
-#  RemoteRL Cheat‑sheet (Trainer side, SDK ≥ 1.1.0)
+# SDK (Python) Trainer Remote Call Cheat‑sheet
 
 **Audience:** Trainers who have already called `remoterl.init(api_key, role="trainer")`.
 

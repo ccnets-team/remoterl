@@ -1,4 +1,4 @@
-# Using `remoterl.init()` and `remoterl.shutdown()` in RemoteRL
+# SDK (Python) Quick Start: Using `remoterl.init()` and `remoterl.shutdown()`
 
 RemoteRL is a lightweight Python SDK that lets you run reinforcement-learning (RL) **trainers** and **simulators** on separate machines without changing your core RL code.
 You only need two public calls:
