@@ -3,133 +3,136 @@
 </p>
 
 # RemoteRL – Remote Reinforcement Learning for Everyone, Everywhere 🚀
+> **Cloud-native RL in a single line of code**
+
+[![PyPI](https://img.shields.io/pypi/v/remoterl)](https://pypi.org/project/remoterl/)
+[![Python](https://img.shields.io/pypi/pyversions/remoterl)](https://pypi.org/project/remoterl/)
+[![Dependencies](https://img.shields.io/librariesio/release/pypi/remoterl)](https://pypi.org/project/remoterl/)
+
+* **[Installation](#-installation)** · **[Configure Key](#-configure-your-api-key)** · **[Hello‑World Example](#-hello-world-example)** · **[Next Steps](#-next-steps)**
+
+---
+
+## 🧩 How It Works — Three Pieces Mental Model
 
 
-RemoteRL is a lightweight client SDK for remotely running simulators and reinforcement learning (RL) training jobs.  
-It works with **Gymnasium**, **Stable-Baselines3**, and **Ray RLlib** (experimental) backends.  
-You can use the CLI or raw Python scripts to launch your remote RL workflows with minimal configuration.
+<div align="center">
+
+Simulator(s)/Robot(s)&emsp;&emsp;&emsp;⇄&emsp;&emsp;&emsp;🌐 RemoteRL Relay&emsp;&emsp;&emsp;⇄&emsp;&emsp;&emsp;Trainer (GPU/Laptop)
+
+</div>
+
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/c4249d58-7548-46e4-9888-c99b8260998b" alt="Frame 1080" width="1000"/>
 </p>
 
+> The **trainer** sends actions, the **simulator** steps the environment, and the relay moves encrypted messages between them. Nothing else to install, no ports to open.
+>
+> * **Isolated runtimes** – trainer and simulator can run different Python or OS stacks.
+> * **Elastic scale** – fan in 1…N simulators, or fan out distributed learner workers.
+> * **Always encrypted, never stored** – payloads travel via TLS and are dropped after delivery.
+> * **Free tier:** every account includes **1 GB of data credit** (≈ 1 M CartPole steps).
+
+
 ---
-
-
 
 
 ## 📦 Installation
 
-Install with your preferred backend:
-
-**Gymnasium only (lightweight):**
 ```bash
+# Gymnasium only (lightweight)
 pip install remoterl
-```
 
-**With Stable-Baselines3 support:**
-```bash
+# + Stable‑Baselines3
 pip install "remoterl[stable-baselines3]"
-```
 
-**With Ray RLlib support (experimental):**
-```bash
-pip install "remoterl[rllib]" torch
+# + Ray RLlib
+pip install "remoterl[rllib]" torch pillow
 ```
 
 ---
 
 ## 🔐 Configure Your API Key
 
-Before you begin, set your RemoteRL API key. You can do this in two ways:
-
-### 1. Interactive CLI (Recommended)
 ```bash
-remoterl register
-```
-A browser window will open. Sign in using Google or email, then copy your API key from your RemoteRL dashboard.
+# Interactive (recommended)
+$ remoterl register         # opens browser & retrieves key
 
-### 2. Environment Variable (ideal for CI or quick runs)
-```bash
-export REMOTERL_API_KEY=api_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+# Non‑interactive (CI, scripts)
+$ export REMOTERL_API_KEY=api_...
 ```
 
----
+## 💻 Hello World Example
 
-## 🚀 Quickstart
+### Run **two terminals**:
 
-### Option A · CLI-only Workflow
-
-Start the simulator:
 ```bash
-remoterl simulate
+# Terminal A – simulator
+$ remoterl simulate
+
+# Terminal B – trainer
+$ remoterl train 
 ```
 
-In a new terminal, start training using one of the supported backends:
+<details>
+<summary><code>remoterl simulate</code> — Python example</summary>
 
-- **Gymnasium**
-  ```bash
-  remoterl train gym
-  ```
+```python
+import remoterl
 
-- **Stable-Baselines3**
-  ```bash
-  remoterl train sb3 --algo PPO
-  ```
-
-- **Ray RLlib (experimental)**
-  ```bash
-  remoterl train rllib --env CartPole-v1 --num-env-runners 8
-  ```
-
-👉 All arguments are passed through to the backend. Run:
-```bash
-remoterl train <backend> --help
+# 1. Decide at runtime whether this process is the trainer or the simulator
+remoterl.init(role="simulator")  # blocks
+remoterl.shutdown()  # optional
 ```
-for full options.
+</details>
+
+<details>
+<summary><code>remoterl train</code> — Python example</summary>
+
+```python
+import gymnasium as gym
+import remoterl
+
+remoterl.init(role="trainer")        # one call switches to remote mode
+
+env = gym.make("CartPole-v1")        # actually runs on the simulator
+obs, _ = env.reset()
+for _ in range(1_000):
+    action = env.action_space.sample()
+    obs, reward, terminated, truncated, info = env.step(action)
+    if terminated or truncated:
+        obs, _ = env.reset()
+```
+</details>
+
+That’s it – you’ve split CartPole across the network.
+
+
+## ⚡ Latency & Isolation
+
+| Path                            | Typical RTT | Notes                               |
+| ------------------------------- | ----------- | ----------------------------------- |
+| Trainer ↔ same‑region simulator | 10‑50 ms    | Feels like local play.              |
+| Trainer ↔ cross‑continent       | 50‑150 ms   | Use frame‑skip for twitchy control. |
 
 ---
 
-### Option B · Python Scripts
+## 📚 Next Steps
 
-Prefer to launch via Python scripts? Use the built-in examples:
 
-- **Simulator**
-  ```bash
-  python simulate_remote.py
-  ```
+* **[`Cloud Service Overview`](<./docs/Overview/overview-cloud-service.md>)** – details on what is and how it works.  
+* **[`Console-Output Guide`](<./docs/SDK (Python)/sdk-console-output-guide.md>)** –  step-by-step screenshots from a *live* trainer ↔ simulator session, with every line called out explained.  
+* **[`Quick-Start (Init & Shutdown)`](<./docs/SDK (Python)/sdk-quick-start-init-shutdown.md>)** – step-by-step examples of `remoterl.init()` and `remoterl.shutdown()` for trainers and simulators.  
+* **[`Trainer Cheat-sheet`](<./docs/SDK (Python)/sdk-trainer-remote-call-cheat-sheet.md>)** – Gymnasium, Stable-Baselines3, and RLlib one-liners for remote execution.  
+---
+ 
+## 📄 License 
 
-- **Trainer (Gymnasium)**
-  ```bash
-  python train_gym_cartpole.py
-  ```
-
-- **Trainer (Stable-Baselines3)**
-  ```bash
-  python train_sb3_cartpole.py
-  ```
-
-- **Trainer (Ray RLlib, experimental)**
-  ```bash
-  python train_rllib_cartpole.py
-  ```
+RemoteRL is distributed under a commercial licence.
+We offer a free tier, while premium plans help offset our worldwide cloud-server costs. See [`LICENSE`](./LICENSE.txt) for details.
 
 ---
 
-## 🧠 Why RemoteRL?
-
-- 🚀 **Launch RL training remotely** in seconds  
-- 🧩 **Modular CLI and SDK** — works with your preferred backend  
-- ⚡ **No infrastructure setup required** — connect via API key and go  
-- 🧪 **Simple examples** to help you get started fast
-
----
-
-## 📄 License
-
-This project is licensed under the [COMMERCIAL LICENSE AGREEMENT](LICENSE).
-
----
 
 **Happy remote training!** 🎯
-
