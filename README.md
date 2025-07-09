@@ -55,13 +55,26 @@ pip install "remoterl[rllib]" torch pillow
 
 ## 🔐 Configure Your API Key
 
-```bash
-# Interactive (recommended)
-$ remoterl register         # opens browser & retrieves key
+To use RemoteRL, you need an API key.
+You can get it either via CLI or from the website:
 
-# Non‑interactive (CI, scripts)
-$ export REMOTERL_API_KEY=api_...
+### Option 1 — CLI (Recommended)
+
+```bash
+remoterl register  # Opens browser and fetches your API key automatically
 ```
+The key will be saved to your local config automatically.
+
+### Option 2 — Manual (for server, CI, or scripts)
+1. Visit [remoterl.com/signup](https://remoterl.com/signup) and **sign up for an account**
+2. Go to your Dashboard
+3. Copy your API key
+
+Set it as an environment variable:
+```bash
+export REMOTERL_API_KEY=api_xxxxx...
+```
+
 
 ## 💻 Hello World Example
 
@@ -126,6 +139,13 @@ That’s it – you’ve split CartPole across the network.
 * **[`Console-Output Guide`](<./docs/SDK (Python)/sdk-console-output-guide.md>)** –  step-by-step screenshots from a *live* trainer ↔ simulator session, with every line called out explained.  
 * **[`Quick-Start (Init & Shutdown)`](<./docs/SDK (Python)/sdk-quick-start-init-shutdown.md>)** – step-by-step examples of `remoterl.init()` and `remoterl.shutdown()` for trainers and simulators.  
 * **[`Trainer Cheat-sheet`](<./docs/SDK (Python)/sdk-trainer-remote-call-cheat-sheet.md>)** – Gymnasium, Stable-Baselines3, and RLlib one-liners for remote execution.  
+
+## 📎 Quick Links
+
+- 🔑 [Get your API Key](https://remoterl.com) – Create an account on the official site to get your key.
+- 📊 [RemoteRL Dashboard](https://remoterl.com/user/dashboard) – Manage your usage, keys, and settings.
+- 📘 [Documentation Index](./docs/Overview/overview-cloud-service.md) – Start from the top-level service overview.
+
 ---
  
 ## 📄 License 
