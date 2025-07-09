@@ -43,12 +43,10 @@ Use the checklist below to quickly probe how RemoteRL Cloud is set up and what o
 * Once the simulator socket closes, every environment inside it stops stepping—no “headless” progress is made. The backend parks the simulator container for roughly two minutes while it waits for a new socket with the same session token. During this parking period credits keep ticking; if you manage to reconnect, the simulation resumes exactly where it left off. If no reconnection arrives within the ~2 minute grace window, the container is torn down, resources are freed, and billing stops.
 * Because the trainer relies on periodic “fan-out” messages from its simulators, it also watches that same two-minute timer; if no simulator comes back before the window expires, the trainer automatically ends the training session as well.
 
----
 **2b — Closing the trainer connection:**
 * Closing the trainer halts its learning loop immediately—no gradients, no logging, no new commands. Connected simulators detach the environment runners that belonged to that trainer and hold them for roughly two minutes; if the trainer does not return within that grace window those runners are discarded. 
 * The simulator itself does not automatically terminate, because a single simulator can service multiple trainers: it keeps stepping environments for any other trainers that are still online. Even all trainers have disconnected and none of them to reconnect, the simulator container still be alive and wait for a new connection.
 
----
 **2c — Session state persistence:**
 * RemoteRL Cloud does **not** snapshot environment RAM or trainer variables for you. When the session is finally cleaned up, all in-memory state disappears. Persist anything you care about (model weights, replay buffers, metrics) from inside your own code—e.g., call `model.save()` or write to S3—so you can resume from a checkpoint in a fresh session later.
 
@@ -72,11 +70,9 @@ Use the checklist below to quickly probe how RemoteRL Cloud is set up and what o
 * RemoteRL Cloud currently operates production clusters in the **United States** (East & West coasts), **South Korea**, **Japan**, **Germany**, **Singapore**, and **Brazil**. This provides coverage across **North America, Asia-Pacific, Europe, and South America**, so most users can reach a nearby point of presence with minimal latency.
 If demand arises elsewhere, our **auto-deploy and maintenance system** can spin up a new regional cluster in under an hour, with no hard limit on how many locations we can add.
 
----
 **3b — Picking the fastest region**
 * Yes. By default the SDK points at a canonical URL that routes you to the region bound to your account, but you can override this and dial a specific endpoint (e.g. point Europe-based laptops at the US-West relay or the Seoul relay). Latency is always lowest when you choose the region **closest to your physical location**; the handshake will even auto-redirect if it detects a mismatch, adding only a few hundred milliseconds at connect-time.
 
----
 
 **3c — Performance under heavy load**
 * The Cloud Service’s role is for a **network relay**—all heavy computation runs on the trainer and simulator processes you start on hardware you own or rent. The relay layer is stateless and scales out horizontally: when traffic grows, more relay nodes come online and existing sessions are transparently rebalanced, so latency and throughput stay steady. 
@@ -144,11 +140,9 @@ If demand arises elsewhere, our **auto-deploy and maintenance system** can spin 
 **6a — Underlying protocol**
 * RemoteRL traffic runs over **TLS-encrypted WebSockets (wss\://)**. The relay layer is stateless: every message is either a small JSON control frame (handshake, ping, etc.) or a binary blob carrying observations, rewards, or actions. This custom framing keeps latency low and avoids the overhead of generic remote-desktop stacks (RDP, VNC, WebRTC).
 
----
 **6b — Where the compute happens**
 * The relay does **no simulation or training work**. All heavy lifting—physics engines, neural-network inference/updates, logging—happens on the **trainer and simulator processes you start on hardware you own or rent** (laptop, on-prem cluster, cloud VM, robot SBC, …). RemoteRL only forwards bytes. That means other users can’t steal your GPU time, and your session never slows down because someone else is using the service.
 
----
 **6e — Security**
 
 * **Encryption:** All sockets are **TLS-protected**, so payloads are unreadable on the wire.

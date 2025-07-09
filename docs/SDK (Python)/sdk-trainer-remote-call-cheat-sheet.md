@@ -10,7 +10,7 @@
 
 ##### Universal Gymnasium Based Remote Calls
 
-* **`gymnasium.make("env_id")`, `gymnasium.make_vec(...)`, `gymnasium.make_vec(...)`** → returns a `RemoteEnv` proxy; every `reset`, `step`, and `close` call is routed through the gateway, with parallelism governed by the `num_workers` parameter you passed to `remoterl.init()`.
+* **`gymnasium.make("env_id")`, `gymnasium.make_vec(...)`** → returns a `RemoteEnv` proxy; every `reset`, `step`, and `close` call is routed through the gateway, with parallelism governed by the `num_workers` parameter you passed to `remoterl.init()`.
 
 ### Gymnasium / Gym
 

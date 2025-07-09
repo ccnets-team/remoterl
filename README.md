@@ -32,7 +32,7 @@ Simulator(s)/Robot(s)&emsp;⇄&emsp;🌐 RemoteRL Relay&emsp;⇄&emsp;Trainer (G
 > * **Isolated runtimes** – trainer and simulator can run different Python or OS stacks.
 > * **Elastic scale** – fan in 1…N simulators, or fan out distributed learner workers.
 > * **Always encrypted, never stored** – payloads travel via TLS and are dropped after delivery.
-> * **Free tier:** every account includes **1 GB of data credit** (≈ 1 M CartPole steps).
+> * **Free tier:** every account includes **1 GB of data credit(per month)** (≈ 1 M CartPole steps).
 
 
 ---
@@ -45,10 +45,10 @@ Simulator(s)/Robot(s)&emsp;⇄&emsp;🌐 RemoteRL Relay&emsp;⇄&emsp;Trainer (G
 pip install remoterl
 
 # + Stable‑Baselines3
-pip install "remoterl[stable-baselines3]"
+pip install remoterl stable-baselines3
 
 # + Ray RLlib
-pip install "remoterl[rllib]" torch pillow
+pip install remoterl "ray[rllib]" torch pillow
 ```
 
 ---
