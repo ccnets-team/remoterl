@@ -6,7 +6,12 @@
 > **Cloud-native RL in a single line of code**
 
 [![PyPI](https://img.shields.io/pypi/v/remoterl)](https://pypi.org/project/remoterl/)
-[![Python](https://img.shields.io/pypi/pyversions/remoterl)](https://pypi.org/project/remoterl/)
+[![Python 3.10–3.12](https://img.shields.io/static/v1?label=python&message=3.10–3.12&logo=python&color=blue)](#)
+[![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20MacOS-blue)](#)
+[![Gymnasium](https://img.shields.io/static/v1?label=gymnasium&message=%20&color=blue&logo=pypi)](https://pypi.org/project/gymnasium/)
+[![Websockets](https://img.shields.io/static/v1?label=websockets&message=%20&color=blue&logo=pypi)](https://pypi.org/project/websockets/)
+[![Extras](https://img.shields.io/static/v1?label=extras&message=ray[rllib])](#)
+[![Extras](https://img.shields.io/static/v1?label=extras&message=stable-baselines3)](#)
 [![Dependencies](https://img.shields.io/librariesio/release/pypi/remoterl)](https://pypi.org/project/remoterl/)
 
 * **[Installation](#-installation)** · **[Configure Key](#-configure-your-api-key)** · **[Hello‑World Example](#-hello-world-example)** · **[Next Steps](#-next-steps)**
