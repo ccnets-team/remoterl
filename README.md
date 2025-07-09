@@ -24,7 +24,7 @@ Simulator(s)/Robot(s)&emsp;⇄&emsp;🌐 RemoteRL Relay&emsp;⇄&emsp;Trainer (G
 
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/c4249d58-7548-46e4-9888-c99b8260998b" alt="Frame 1080" width="1000"/>
+  <img width="723" alt="RemoteRL Service Flow" src="https://github.com/user-attachments/assets/c792c0f1-4461-4b13-ade4-0b344eb9ff69" />
 </p>
 
 > The **trainer** sends actions, the **simulator** steps the environment, and the relay moves encrypted messages between them. Nothing else to install, no ports to open.
