@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
-"""remoterl.pipelines.train
-================================================
-Generic training dispatcher for **RemoteRL**.
+"""train.py - Universal RL training dispatcher for RemoteRL
 
-Key improvements in this revision
----------------------------------
-1. **Flexible *params* input** - accepts either a pre-parsed ``dict`` **or** the
-   raw CLI tail list (e.g. ``['--lr', '3e-4', '--env_id', 'CartPole-v1']``),
-   so the new* remoterl CLI can simply forward ``ctx.args`` without having to
-   parse it first.
-2. **Robust flag parser** - `_parse_cli_tail()` turns the free-form token list
-   into a clean dict:
-   * first bare token → ``env_id``
-   * ``--flag value`` pairs → ``{"flag": value}``
-   * lone ``--switch``      → ``{"switch": True}``
-   * extra unflagged tokens → ``extra_positional`` list
-3. **Lower-case normalisation** - all keys are coerced to lower-case so they
-   match the dataclass attributes in each RL framework config.
-4. **Helpful errors & exit codes** - unknown RL framework or malformed params now
-   exit with code 1 and a coloured message via *Typer*.
+This module serves as a unified entry point for training with different reinforcement learning 
+backends (Gymnasium, Stable-Baselines3, or Ray RLlib) using RemoteRL. It parses command-line 
+arguments or configuration inputs to determine which training pipeline to run and then hands off 
+execution to the appropriate module (`gym.py`, `sb3.py`, or `rllib.py`). By centralizing the logic 
+here, the `remoterl train` CLI command can seamlessly support multiple frameworks with a consistent 
+interface.
+
+**Supported frameworks:** The first argument (or config key) selects the RL framework:
+- `"gym"` – Use the basic Gymnasium rollout (no learning, random policy) for quick tests.
+- `"sb3"` – Use Stable-Baselines3 for training an agent (e.g. PPO, DQN, etc.).
+- `"rllib"` – Use Ray RLlib for distributed training algorithms.
+
+**How it works:** When you run `remoterl train <framework> [options]`:
+1. The dispatcher resolves your RemoteRL API key (similar to the simulator, via environment or config) 
+   and initializes the connection with `remoterl.init(role="trainer", ...)`, honoring any remote-specific 
+   settings like `num_workers` if provided.
+2. It then imports the corresponding module for the chosen framework and calls its `train_<framework>` 
+   function, passing along the parsed hyperparameters.
+3. If the required library for that framework is not installed or any configuration is invalid, it will 
+   print a clear error message and exit gracefully.
+
+**Usage (CLI):** Run via the `remoterl` CLI. For example:
 """
 from __future__ import annotations
 

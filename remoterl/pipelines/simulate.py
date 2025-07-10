@@ -1,10 +1,27 @@
 #!/usr/bin/env python3
-"""
-Run a RemoteRL simulator.
+"""simulate.py - Launch a RemoteRL simulator process (environment host)
 
-Lookup order for the API key via :func:`resolve_api_key`:
-  1. ``$REMOTERL_API_KEY`` environment variable
-  2. ``~/.config/remoterl/config.json`` (or ``REMOTERL_CONFIG_PATH``)
+This module starts a RemoteRL **simulator** instance, which registers with the RemoteRL 
+service and hosts environments for remote trainers. It should be run on a machine where 
+the environments (simulators or robots) reside **before** starting any trainer. Once launched, 
+it will block indefinitely, waiting for trainers to connect and issue environment commands.
+
+Key behavior:
+- Resolves the RemoteRL API key from configuration (no direct CLI args). If the API key is not 
+  provided, it looks for it in:
+  1. The environment variable `REMOTERL_API_KEY`.
+  2. The user config file (e.g. `~/.config/remoterl/config.json` or path specified by 
+     `REMOTERL_CONFIG_PATH`).
+  If no API key is found, the simulator will exit with an instructive error (prompting you to set 
+  up the API key via `remoterl register` or environment variable).
+- Calls `remoterl.init(api_key, role="simulator")` to connect to the RemoteRL cloud gateway. On 
+  successful connection, this process is marked as a simulator and begins waiting for work.
+- Runs indefinitely until interrupted (Ctrl+C), at which point it will shut down gracefully.
+
+**Usage:** Typically invoked through the CLI as `remoterl simulate`. On startup, it prints a 
+confirmation message (including a short form of the API key) indicating the simulator is running. 
+From that point, any remote trainer using the same API key can request environments and steps, 
+which this process will handle internally. Use Ctrl+C to terminate the simulator when done.
 """
 from __future__ import annotations
 import sys, typer

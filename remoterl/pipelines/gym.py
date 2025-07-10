@@ -1,21 +1,28 @@
 #!/usr/bin/env python3
-"""gym.py - Step-based Gymnasium RL Framework for RemoteRL
-================================================================
-This revision removes the *episode* outer‑loop and instead runs for a fixed
-number of **steps** (across all vectorised environments).  Many modern
-Gymnasium environments auto‑reset when they reach a terminal state, so tracking
-per‑episode returns can be misleading or brittle.  Counting raw environment
-steps is deterministic and version‑agnostic.
+"""gym.py - Step-based Gymnasium environment runner (random policy) for RemoteRL
 
-Usage
------
-Pass ``total_steps`` instead of ``num_episodes`` when calling
-``train_gym({...})``.  Defaults to **50 000** steps if omitted.
+This module runs a random-action policy on one or more remote Gymnasium environments 
+via RemoteRL. It serves as a minimal example (no learning algorithm) to test environment 
+connectivity and measure performance. Instead of iterating over episodes, it executes 
+a fixed number of environment steps to avoid ambiguity with auto-resets in modern Gymnasium 
+environments, providing consistent and deterministic progress measurement.
 
-The live report now prints:
-* **inst_fps** - instantaneous steps/sec (over the last interval)
-* **avg_fps**  - average steps/sec since the start
-* **steps**    - total environment steps executed so far
+**Usage:** Call `train_gym(hyperparams)` with a dictionary of parameters, or use the CLI 
+(`remoterl train gym`). Key options include:
+- `env_id` – the Gymnasium environment ID (default `"CartPole-v1"`).
+- `num_envs` – number of parallel environment instances (default **32**).
+- `total_steps` – total environment steps to run across all envs (default **50,000**).
+- `fps_interval` – seconds between FPS log updates (default **1.0**).
+
+On start, this trainer connects to RemoteRL (as a **trainer** role) using your API key 
+and creates the requested remote environment(s). It then continuously samples random 
+actions until the `total_steps` count is reached. During execution, it prints live stats:
+- **inst_fps** – instantaneous steps per second over the last reporting interval.
+- **avg_fps** – average steps per second since start of the run.
+- **steps** – total steps executed so far (out of the `total_steps` target).
+
+After completing the rollout, the script closes the environment and outputs a summary 
+(dictionary) with overall metrics such as mean reward per step, total steps, and overall FPS.
 """
 from __future__ import annotations
 
