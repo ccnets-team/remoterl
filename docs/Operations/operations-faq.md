@@ -6,22 +6,22 @@ Use the checklist below to quickly probe how RemoteRL Cloud is set up and what o
 ## 1. Session Duration and Persistence
 
 * **1a. How long can a training job run remote continuously once it starts?**
-   *(i.e., the longest uninterrupted training session allowed)*
+   *(i.e., maximum remote runtime)*
 
 
-* **1b. If the simulator (trainer session) sits idle with no user input, how long will the session stay alive before it is automatically shut down?**
-   *(i.e., the maximum “cold-idle” waiting time)*
+* **1b. How long can a simulator stay up before it’s shut down?**
+   *(i.e., maximum idle timeout)*
 
 
 ---
 
 ### Answers
 
-**1a — Maximum Conntection Duration**
+**1a — Maximum Remote Runtime**
 * There’s no fixed wall-clock limit. A training job can run for hours or days so long as your account still has time / data credits.
 
 
-**1b — Idle timeout before shutdown** 
+**1b — Maximum Idle Timeout** 
 * The server sends its own heartbeats and use reconnection loop to keep the connection alive, so an idle simulator isn’t shut down just because you aren’t typing. Credits keep accruing while the session is active. The session is closed only if the connection goes completely silent—e.g., the client vanishes and no heartbeats are received— mostly immediate or \~mostly far less than 5 minutes—does the system close the session.
 
 ## 2. Disconnection and Reconnection

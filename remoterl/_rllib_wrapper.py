@@ -1,5 +1,16 @@
-# remoterl/_rllib_wrapper.py
-# RemoteRL – Lightweight RLlib integration helpers.
+"""_rllib_wrapper.py - Ray RLlib patching utilities for RemoteRL integration.
+
+This module provides functions to monkey-patch certain RLlib behaviors so that 
+RemoteRL's remote environments can integrate seamlessly. These patches are applied 
+on the trainer side to intercept environment registration and algorithm construction:
+- Registering remote environments in RLlib's global registry using a secret token.
+- Patching `tune.register_env` to automatically wrap environment creators with RemoteRL logic.
+- Patching RLlib's `AlgorithmConfig.build_algo` method to inject a RemoteRL hook before trainer instantiation.
+
+All functions are safe to call only if Ray RLlib is installed; they will raise 
+ImportError otherwise. The original functions or methods are returned so they 
+can be restored if needed (useful for unit tests or cleanup).
+"""
 
 from __future__ import annotations
 from typing import Any

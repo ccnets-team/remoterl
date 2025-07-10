@@ -26,7 +26,7 @@ def init(
     Parameters
     ----------
     api_key
-        RemoteRL Cloud API key.  May be *None* when using an on-premise hub.
+        RemoteRL Cloud API key.  May be *None* when using an on-premises.
     role
         Either ``"trainer"`` or ``"simulator"``.
     num_workers[only trainer parameter]

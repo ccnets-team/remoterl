@@ -140,8 +140,8 @@ That’s it – you’ve split CartPole across the network.
 ## 📚 Next Steps
 
 
-* **[`Cloud Service Overview`](<./docs/Overview/overview-cloud-service.md>)** – details on what is and how it works.  
-* **[`Console-Output Guide`](<./docs/SDK (Python)/sdk-console-output-guide.md>)** –  step-by-step screenshots from a *live* trainer ↔ simulator session, with every line called out explained.  
+* **[`Cloud Service Overview`](<./docs/Overview/overview-cloud-service.md>)** – details on what it is and how it works.  
+* **[`Console-Output Guide`](<./docs/SDK (Python)/sdk-console-output-guide.md>)** –  step-by-step screenshots from a *live* trainer ↔ simulator session, with every line highlighted and explained.  
 * **[`Quick-Start (Init & Shutdown)`](<./docs/SDK (Python)/sdk-quick-start-init-shutdown.md>)** – step-by-step examples of `remoterl.init()` and `remoterl.shutdown()` for trainers and simulators.  
 * **[`Trainer Cheat-sheet`](<./docs/SDK (Python)/sdk-trainer-remote-call-cheat-sheet.md>)** – Gymnasium, Stable-Baselines3, and RLlib one-liners for remote execution.  
 
@@ -155,7 +155,7 @@ That’s it – you’ve split CartPole across the network.
  
 ## 📄 License 
 
-RemoteRL is distributed under a commercial licence.
+RemoteRL is distributed under a commercial license.
 We offer a free tier, while premium plans help offset our worldwide cloud-server costs. See [`LICENSE`](./LICENSE.txt) for details.
 
 ---
