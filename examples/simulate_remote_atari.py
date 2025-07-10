@@ -1,14 +1,24 @@
-"""Start an Atari simulator using ALE-py for RemoteRL.
+"""Start an Atari game simulator using ALE-py for RemoteRL.
 
-Run this before launching any trainer so the remote workers have an Atari
-environment to interact with.
-
-This example uses the `ale-py` package to create Atari environments compatible with
+Use this script to host an Atari environment (via the Arcade Learning Environment) as a remote simulator. 
+Run it **before** launching any trainer that will use an Atari game, so the remote agent has an environment 
+to interact with. 
+This example uses the `ale-py` package to register Atari environments in Gymnasium 
+(see the ALE Gymnasium interface documentation).
 https://ale.farama.org/gymnasium-interface/
 
-pip install "gymnasium[atari, accept-rom-license]"
+Make sure to install Gymnasium with Atari support and accept the ROM license, for example:
 
+**Prerequisites**
+
+* RemoteRL API key – set the `REMOTERL_API_KEY` env var or edit `API_KEY`.  
+  Get one at <https://remoterl.com/user/dashboard>.
+  
+    pip install remoterl "gymnasium[atari, accept-rom-license]"
+    pip install ale-py
+    
 """
+
 # pip install ale-py
 import gymnasium as gym
 import ale_py

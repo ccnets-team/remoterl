@@ -1,9 +1,23 @@
-"""Train ``Breakout`` with RLlib over RemoteRL.
+"""Train ``CartPole-v1`` (or an Atari game) with Ray RLlib (PPO) over RemoteRL.
 
-This example mirrors the CartPole variant but uses an Atari environment via the
-Gymnasium interface.
+This script demonstrates using Ray's RLlib library to train a PPO agent on a remote environment. 
+By default it runs CartPole-v1, but you can set an Atari game (e.g., Breakout) as the `ENV_ID` 
+to test a more complex scenario. Launch one or more simulators first (with the same API key), 
+and ensure that Ray RLlib is installed before running this trainer.
+
+**Prerequisites**
+
+* RemoteRL API key – set the `REMOTERL_API_KEY` env var or edit `API_KEY`.  
+  Get one at <https://remoterl.com/user/dashboard>.
+* Ray RLlib **plus** Torch (needed for PPO) **and** Pillow (image preprocessing).
+
+    # Linux / macOS
+    pip install remoterl "ray[rllib]" torch pillow
+
+    # Windows (RLlib ≥ 2.45.0 has issues on Win; pin below)
+    pip install remoterl "ray[rllib]<2.45.0" torch pillow
+
 """
-
 import ray, remoterl
 from ray.tune.registry import get_trainable_cls
 from ray.rllib.algorithms.algorithm_config import AlgorithmConfig

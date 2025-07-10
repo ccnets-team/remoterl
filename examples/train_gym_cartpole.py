@@ -2,9 +2,18 @@
 
 This script shows the absolute basics of how to connect to the RemoteRL
 service and drive a single environment with a random policy.  Launch the
-simulator first and then run this trainer using the same API key.
-"""
+simulator first (with the same API key) and then run this trainer using the same API key.
+You will see the remote environment in action. (Requires Gymnasium to be installed.)
 
+**Prerequisites**
+
+* RemoteRL API key – set the `REMOTERL_API_KEY` env var or edit `API_KEY`.  
+  Get one at <https://remoterl.com/user/dashboard>.
+
+    pip install remoterl
+    
+"""
+    
 import time
 import typer
 import gymnasium

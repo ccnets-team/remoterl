@@ -1,9 +1,19 @@
-"""Train ``CartPole-v1`` with Stable Baselines3 over RemoteRL.
+"""Train ``CartPole-v1`` with Stable Baselines3 (PPO) over RemoteRL.
 
-Start your simulators first and run this script with the same API key to train
-a basic PPO agent via the SB3 pipeline.
+This example uses the Stable Baselines3 library to train a basic PPO agent 
+on the CartPole environment via RemoteRL. Launch your simulator(s) first 
+(with the same API key), then run this script to begin training the agent. 
+Make sure that `stable-baselines3` is installed on your trainer side.
+
+
+**Prerequisites**
+
+* RemoteRL API key – set the `REMOTERL_API_KEY` env var or edit `API_KEY`.  
+  Get one at <https://remoterl.com/user/dashboard>.
+
+    pip install stable-baselines3
+
 """
-
 from stable_baselines3 import PPO  # noqa: E402
 from stable_baselines3.common.env_util import make_vec_env  # noqa: E402
 
