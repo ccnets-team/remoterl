@@ -12,7 +12,6 @@ directly.
 
 # remoterl/__init__.py
 from typing import Optional, Literal
-from remoterl import init as init_remoterl, shutdown as shutdown_remoterl
 
 def init(
     api_key: Optional[str],
@@ -39,14 +38,15 @@ def init(
     RuntimeError
         Propagated unchanged from the compiled core when a remote peer is
         unavailable or any other initialisation error occurs.
+    NotImplementedError
+        Raised when the **RemoteRL package is not available**
+        (this source-only stub is being imported instead of the wheel).
     """
-
-    return init_remoterl(
-        api_key=api_key,
-        role=role,
-        num_workers=num_workers,
-        num_env_runners=num_env_runners,
+    raise NotImplementedError(
+        "The RemoteRL package is not available. "
+        "Run `pip install remoterl` first."
     )
+
 
 def shutdown() -> None:
     """Shut down RemoteRL networking.
@@ -57,7 +57,14 @@ def shutdown() -> None:
     Returns
     -------
     None
-    """
-    shutdown_remoterl()
 
-__all__ = ["init", "shutdown"]
+    Raises
+    ------
+    NotImplementedError
+        Raised when the **RemoteRL package is not available**
+        (this source-only stub is being imported instead of the wheel).
+    """
+    raise NotImplementedError(
+        "The RemoteRL package is not available. "
+        "Run `pip install remoterl` first."
+    )

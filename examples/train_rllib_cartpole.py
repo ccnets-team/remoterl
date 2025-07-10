@@ -19,9 +19,8 @@ and ensure that Ray RLlib is installed before running this trainer.
 
 """
 import ray, remoterl
-from ray.tune.registry import get_trainable_cls
-from ray.rllib.algorithms.algorithm_config import AlgorithmConfig
 from remoterl.config import ensure_api_key
+from remoterl.pipelines.rllib import configure_algorithm
 
 API_KEY = "your_api_key_here"
 ROLE    = "trainer"
@@ -33,48 +32,37 @@ def main() -> None:
         return
 
     # ─── 2️⃣  Build AlgorithmConfig with version guards ─────────────────────
-    try:  # ---------- Modern builder API (RLlib ≥ 2.10) ----------
-        algo_config: AlgorithmConfig = (
-            get_trainable_cls("PPO").get_default_config()
-            .environment(env=ENV_ID)
-            .env_runners(num_env_runners=4, num_envs_per_env_runner=16)
-            .rollouts(rollout_fragment_length="auto", sample_timeout_s=None)
-            .training(num_epochs=20, train_batch_size=1_000,
-                      minibatch_size=256, lr=1e-3)
-        )
-    except AttributeError:  # ---------- Legacy dict API ----------
-        algo_config = get_trainable_cls("PPO").get_default_config()
-        # Environment & rollout workers
-        algo_config["env"] = ENV_ID
-        algo_config["num_workers"] = 4
-        algo_config["num_envs_per_worker"] = 16
-        algo_config["rollout_fragment_length"] = "auto"
-        algo_config["sample_timeout_s"] = None
-        # Training hyper-params
-        algo_config["num_sgd_iter"]        = 20     # ≈ num_epochs
-        algo_config["train_batch_size"]    = 1_000
-        algo_config["sgd_minibatch_size"]  = 256
-        algo_config["lr"]                  = 1e-3
+    hyperparameters = {
+        "trainable_name": "PPO",
+        "env": ENV_ID,
+        "num_env_runners": 4,
+        "num_envs_per_env_runner": 16,
+        "rollout_fragment_length": "auto",
+        "sample_timeout_s": None,
+        "num_epochs": 20,
+        "train_batch_size": 1_000,
+        "minibatch_size": 256,
+        "lr": 1e-3,
+        "enable_rl_module_and_learner": False,
+        "enable_env_runner_and_connector_v2": False,
+    }
+    algo_config = configure_algorithm(hyperparameters)
 
-    # ─── 3️⃣  Force the v1 stack when possible ──────────────────────────────
-    for flag in ("enable_rl_module_and_learner",
-                 "enable_env_runner_and_connector_v2"):
-        try:
-            setattr(algo_config, flag, False)
-        except AttributeError:
-            pass  # older RLlib didn’t expose these flags – safe to ignore
-
-    # ─── 4️⃣  Spin up Ray quietly ───────────────────────────────────────────
-    ray.init()
+    # ─── 3️⃣  Spin up Ray quietly ───────────────────────────────────────────
+    ray.init()  
 
     print("Algorithm configuration:", algo_config)
 
-    # ─── 5️⃣  Train! ─────────────────────────────────────────────────────────
+    # ─── 4️⃣  Build the Algorithm ─────────────────────────────────────────
     try:
         algo = algo_config.build_algo()
     except AttributeError:  # Legacy API
-        algo = get_trainable_cls("PPO")(config=algo_config)
+        raise RuntimeError(
+            "This example requires Ray RLlib version 2.10 or later. "
+            "Please upgrade your Ray installation."
+        )
         
+    # ─── 5️⃣  Train the Algorithm ────────────────────────────────────────────
     try:
         results = algo.train()
         print("Training completed. Results:", results)
@@ -82,6 +70,7 @@ def main() -> None:
         print(f"An error occurred during training: {e}")
         results = None
     finally:
+        # ─── 6️⃣  Clean up ────────────────────────────────────────────────
         ray.shutdown()
         
     return results

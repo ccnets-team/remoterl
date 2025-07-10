@@ -25,9 +25,8 @@ ROLE = "trainer"
 ENV_ID = "CartPole-v1"
 
 def main() -> None:
-    # 1️⃣  Connect to RemoteRL
-    is_connected = remoterl.init(api_key=ensure_api_key(API_KEY), role=ROLE)
-    if not is_connected:
+    # 1️⃣  Connect – replace API_KEY with your own or set REMOTERL_API_KEY
+    if not remoterl.init(api_key=ensure_api_key(API_KEY), role=ROLE):
         return
 
     # ------------------------------------------------------------------
@@ -38,7 +37,7 @@ def main() -> None:
     # ------------------------------------------------------------------
     # Algorithm
     # ------------------------------------------------------------------
-    model = PPO(  # 3️⃣  Instantiate PPO
+    model = PPO(                # 3️⃣  Instantiate PPO
         policy="MlpPolicy",
         env=env,
         policy_kwargs=dict(net_arch=dict(pi=[128, 64], vf=[128, 64])),
@@ -48,22 +47,15 @@ def main() -> None:
         n_epochs=4,
         batch_size=64,
     )
-
-    try:
-        import rich, tqdm  # noqa: F401
-        _HAS_PROGRESS = True
-    except ImportError:  # pragma: no cover
-        _HAS_PROGRESS = False
         
-    model.learn(
-        total_timesteps=200_000,
-        progress_bar=_HAS_PROGRESS,  # 5️⃣  Train
+    model.learn(                 # 4️⃣  Train the agent
+        total_timesteps=10_000, 
     )
 
     # ------------------------------------------------------------------
     # Save & clean-up
     # ------------------------------------------------------------------
-    env.close()
+    env.close()                  # 5️⃣  Close the environment
 
     print(f"[OK] Training finished\n")
 
