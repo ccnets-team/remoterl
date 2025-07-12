@@ -79,3 +79,19 @@ def filter_config(func, cfg: Dict[str, Any]) -> Dict[str, Any]:
 
         out[k] = v
     return out
+
+from builtins import print as _print
+import sys
+
+def safe_print(*args, **kwargs) -> None:
+    """Print to stdout with best-effort Unicode safety."""
+    kwargs.setdefault("flush", True)
+    text = " ".join(map(str, args))
+    try:
+        _print(text, **kwargs)
+    except UnicodeEncodeError:
+        safe = text.encode(sys.stdout.encoding or "ascii", "replace") \
+                   .decode(sys.stdout.encoding or "ascii", "replace")
+        _print(safe, **kwargs)
+    except Exception:
+        _print(text, **kwargs)

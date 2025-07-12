@@ -59,7 +59,7 @@ def ensure_default_hyperparams(hyperparams: dict) -> dict:
     """
     # Determine the environment ID in priority order: modern 'env' key, then legacy 'env_id', or default to CartPole.
     env_val = (
-        hyperparams.get("env")                # current RLlib config key for env
+        hyperparams.pop("env", None)                # current RLlib config key for env
         or hyperparams.pop("env_id", None)    # accept 'env_id' for backward compatibility (remove it if present)
         or "CartPole-v1"                      # default environment if none provided
     )

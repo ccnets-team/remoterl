@@ -6,7 +6,7 @@
 > **Cloud-native RL in a single line of code**
 
 [![PyPI](https://img.shields.io/pypi/v/remoterl)](https://pypi.org/project/remoterl/)
-[![Python 3.10–3.12](https://img.shields.io/static/v1?label=python&message=3.10–3.12&logo=python&color=blue)](#)
+[![Python 3.9–3.12](https://img.shields.io/static/v1?label=python&message=3.9–3.12&logo=python&color=blue)](#)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20MacOS-blue)](#)
 [![Gymnasium](https://img.shields.io/static/v1?label=gymnasium&message=%20&color=blue&logo=pypi)](https://pypi.org/project/gymnasium/)
 [![Websockets](https://img.shields.io/static/v1?label=websockets&message=%20&color=blue&logo=pypi)](https://pypi.org/project/websockets/)

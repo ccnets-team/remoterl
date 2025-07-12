@@ -34,7 +34,7 @@ from typing import Any, Dict, List, Tuple
 import typer
 import remoterl  # pip install remoterl
 from remoterl.config import resolve_api_key
-from .helpers import filter_config
+from .helpers import filter_config, safe_print
 
 # ---------------------------------------------------------------------------
 # Supported back-ends (alias → (module, train_fn))
@@ -126,7 +126,13 @@ def train(rl_framework: str, params: List[str] | Dict[str, Any] | None = None) -
     params.pop("api_key", None)  # remove api_key from params if present
     params.pop("role", None)  # remove role from params if present
     
-    remoterl_kwargs = filter_config(remoterl.init, params)
+    remoterl_kwargs = filter_config(remoterl.init, params).copy()
+    
+    # RemoteRL directly receives required "num_workers" and "num_env_runners" parameters when using Ray RLlib.
+    if rl_framework in {"ray", "rllib"}:
+        remoterl_kwargs.pop("num_workers", None)  # remove num_workers if present, as it is not used by Ray RLlib
+        remoterl_kwargs.pop("num_env_runners", None)  # remove num_workers if present, as it is not used by Ray RLlib
+
     is_remote = remoterl.init(api_key, role="trainer", **remoterl_kwargs)      # chainable    
     if not is_remote:
         raise typer.Exit(code=1)
@@ -157,4 +163,4 @@ if __name__ == "__main__":  # pragma: no cover
         extra = sys.argv[2:]
         train(rl_framework_arg, extra)
     else:
-        print("Usage: train.py <rl_framework> [--flag value ...] [ENV_ID]")
+        safe_print("Usage: train.py <rl_framework> [--flag value ...] [ENV_ID]")

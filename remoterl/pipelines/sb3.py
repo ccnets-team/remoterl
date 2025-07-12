@@ -99,8 +99,14 @@ def ensure_default_hyperparams(hp: Dict[str, Any]) -> Dict[str, Any]:
         Dict[str, Any]: A complete hyperparameters dictionary with defaults applied.
     """
     # Base default hyperparameters for SB3 training.
+    env_val = (
+        hp.pop("env_id", None)                # current RLlib config key for env
+        or hp.pop("env", None)    # accept 'env_id' for backward compatibility (remove it if present)
+        or "CartPole-v1"                      # default environment if none provided
+    )
+        
     defaults = {
-        "env_id": "CartPole-v1",
+        "env_id": env_val,
         "n_envs": 32,
         "algo": "PPO",
         "policy": "MlpPolicy",
@@ -182,9 +188,12 @@ def train_sb3(hyperparams: Dict[str, Any]) -> None:
     # 1) Environment construction 
     # ------------------------------------------------------------------ 
     from stable_baselines3.common.env_util import make_vec_env
+    from stable_baselines3.common.vec_env import SubprocVecEnv
     # Prepare arguments for environment creation, filtering out unrelated keys.
+    # hyperparams["vec_env_cls"] = SubprocVecEnv  # Optional: use SubprocVecEnv for parallelism 
     vec_env_kwargs = filter_config(make_vec_env, hyperparams)
     # Create the Gymnasium environment. If n_envs > 1, this creates a vectorized env with n_envs copies.
+    typer.echo(f"[INFO] Creating environment with parameters: {vec_env_kwargs}")
     env = make_vec_env(**vec_env_kwargs)
 
     # ------------------------------------------------------------------ 

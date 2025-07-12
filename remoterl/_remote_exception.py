@@ -51,11 +51,6 @@ classify exceptions more effectively::
         → 7 high-level families (catch all by family)
             → 50+ sub-categories (catch all by sub-category with contextual details)
 
-Version history
----------------
-* **v1.1.3** (2025-07-??) - This docstring is published ahead of the
-  release for reference; the enhanced exception display (and related
-  improvements) will ship with v1.1.3.
 """
 from __future__ import annotations
 
