@@ -17,10 +17,10 @@
 | Call                                         | RemoteRL behaviour                                           | Notes                                                            |
 | -------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------- |
 | `gymnasium.make("env_id")`                   |                                                              |                                                                  |
-| `gym.make(...)`                              | Returns **`RemoteEnv` proxy**                                | `reset`, `step`, `close` calls are forwarded through the gateway |
-| `gym.make_vec(...)`                              | Returns **`RemoteEnvVec`  proxy**                                | `reset`, `step`, `close` calls are remote same as `gym.make()` |
+| `gym.make(...)`                              | Returns **`RemoteEnv` proxy** (same behaviour as `gym.make()`)                               | `reset`, `step`, `close` calls are forwarded through the gateway |
+| `gym.make_vec(...)`                              | Returns **`RemoteEnvVec`  proxy** (same behaviour as `gym.make_vec()`)                                | `reset`, `step`, `close` calls are remote same as `gym.make()` |
 | `gym.register()`                              | **Register** env on remote simulators **                                |  |
-| `env.render()`                               | Placeholder – frame streaming will arrive with **SDK 1.1.4** |                                                                  |
+| `env.render()`                               | Placeholder – frame streaming will arrive with **SDK 1.2.0** |                                                                  |
 | `env.observation_space` / `env.action_space` | Fetched once from the simulator then cached locally          |                                                                  |
 
 
@@ -29,8 +29,8 @@
 | Call / Helper                           | RemoteRL behaviour                                                         | Notes                                              |
 | --------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------- |
 | `sb3.common.env_util.make_vec_env(...)` | Patched to build **remote** vector envs by default                         | Uses the same Gym patched factories under the hood |
-| `DummyVecEnv` / `SubprocVecEnv`         | Public API unchanged; batched `step()` and `reset()` fan‑out to simulators |                                                    |
-
+| `DummyVecEnv`         | Public API unchanged; batched `step()` and `reset()` fan‑out to simulators |                                                    |
+| `SubprocVecEnv`         | Same as `DummyVecEnv` |    `n_envs` is used as remoterl `num_workers` and `num_env_runners` in the subprocesses                                                |
 
 ### Ray RLlib
 

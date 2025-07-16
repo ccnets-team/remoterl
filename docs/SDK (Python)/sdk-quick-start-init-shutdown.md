@@ -34,6 +34,7 @@ remoterl.init(
     *,
     num_workers: int = 1,
     num_env_runners: int = 2,
+    max_env_runners: int = 32,
 ) -> bool
 ```
 
@@ -41,10 +42,11 @@ remoterl.init(
 
 | Name              | Type / Default               | Applies to   | Description                                                                                                                        |
 | ----------------- | ---------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `api_key`         | `str \| None`                | both         | RemoteRL Cloud key (pass `None` for on-prem hubs). Can also be supplied via the `REMOTERL_API_KEY` env var.                        |
+| `api_key`         | `str \`                | both         | RemoteRL Cloud key                        |
 | `role`            | `"trainer"` \| `"simulator"` | both         | Determines whether this process performs training or hosts environments.                                                           |
-| `num_workers`     | `int`, default = `1`         | trainer only | **Total** environment-runner tasks *across* all simulators. If runners > simulators, some simulators get multiple runners.<br>*(Ignored when using RLlib—RLlib manages its own rollout workers. We use what RLlib provides in this case)*     |
-| `num_env_runners` | `int`, default = `2`         | trainer only | **Number of environment-runner tasks per simulator.** If runners > simulators, each simulator may host multiple runners.           |
+| `num_workers`     | `int`, default = `1`         | trainer only | **Local worker processes/threads** that the trainer spawns to drive remote env-runners. *(Ignored when using RLlib—RLlib or Stable-Baselines3 SubprocVecEnv manages its own rollout workers(or n_envs). We use what RLlib/SB3 provides in this case)*     |
+| `num_env_runners` | `int`, default = `2`         | trainer only | **Total** remote environment-runner requested to open a training session, across every simulator combined. If runners > simulators, each simulator may host multiple runners.          |
+| `max_env_runners` | `int`, default = `32`         | simulator only | **Per-simulator hard cap** on concurrently spawned environment-runner processes. Set to `1` for real-world edge devices (e.g., mobile or robotic hardware) that can host only a single `NativeEnv` |
 
 
 ### Return value
@@ -57,7 +59,7 @@ A `RuntimeError` is raised for fatal issues (e.g. invalid API key).
 #### Trainer flow
 
 1. **Connect** to the RemoteRL backend with the supplied `api_key`.
-2. **Spawn** `num_workers` processes and allocate up to `num_env_runners` async tasks.
+2. **Spawn** `num_workers` processes and allocate `num_env_runners` async tasks to simulators joining the training session.
 3. **Patch** Gymnasium / RLlib / Stable-Baselines3 so subsequent environment calls transparently use remote simulators.
 
 #### Simulator flow
