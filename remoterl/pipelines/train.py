@@ -26,12 +26,12 @@ interface.
 """
 from __future__ import annotations
 
-import itertools
 import importlib
 import sys
 from typing import Any, Dict, List, Tuple
 
 import typer
+from .helpers import parse_cli_tail
 import remoterl  # pip install remoterl
 from remoterl.config import resolve_api_key
 from .helpers import filter_config, safe_print
@@ -58,39 +58,6 @@ _RL_FRAMEWORK_FULL_NAMES: Dict[str, Tuple[str, str]] = {
 }
 
 # ---------------------------------------------------------------------------
-# CLI-tail → dict helper (kept internal)
-# ---------------------------------------------------------------------------
-
-def _parse_cli_tail(tokens: List[str]) -> Dict[str, Any]:
-    """Convert a raw token list (as passed by *Typer*'s ``ctx.args``) into a dict."""
-    out: Dict[str, Any] = {}
-    extra_positional: List[str] = []
-
-    it = iter(tokens)
-    first = next(it, None)
-    if first is not None:
-        if first.startswith("--"):
-            # First token is already a flag → rewind
-            it = itertools.chain([first], it)
-        else:
-            out["env_id"] = first
-    for tok in it:
-        if tok.startswith("--"):
-            key = tok.lstrip("-").lower().replace("-", "_")
-            val = next(it, True)  # lone switch → True
-            if isinstance(val, str) and val.startswith("--"):
-                # The flag was a boolean switch; rewind
-                out[key] = True
-                it = itertools.chain([val], it)
-            else:
-                out[key] = val
-        else:
-            extra_positional.append(tok)
-    if extra_positional:
-        out["extra_positional"] = extra_positional
-    return out
-
-# ---------------------------------------------------------------------------
 # Public entry-point
 # ---------------------------------------------------------------------------
 
@@ -102,7 +69,7 @@ def train(rl_framework: str, params: List[str] | Dict[str, Any] | None = None) -
     if params is None:
         params = {}
     if isinstance(params, list):  # raw CLI tail → parse
-        params = _parse_cli_tail(params)
+        params = parse_cli_tail(params)
     if not isinstance(params, dict):
         typer.secho("*params* must be a dict or list of tokens.", fg="red", bold=True)
         raise typer.Exit(code=1)

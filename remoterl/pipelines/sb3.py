@@ -104,7 +104,7 @@ def ensure_default_hyperparams(hp: Dict[str, Any]) -> Dict[str, Any]:
         or hp.pop("env", None)    # accept 'env_id' for backward compatibility (remove it if present)
         or "CartPole-v1"                      # default environment if none provided
     )
-        
+    SEED = 1234
     defaults = {
         "env_id": env_val,
         "n_envs": 32,
@@ -114,6 +114,7 @@ def ensure_default_hyperparams(hp: Dict[str, Any]) -> Dict[str, Any]:
         # ----- PPO-specific defaults -----
         "batch_size": 64,
         "gamma": 0.99,
+        "seed": SEED,
         "learning_rate": 3e-4,
         "gae_lambda": 0.95,
         "clip_range": 0.2,

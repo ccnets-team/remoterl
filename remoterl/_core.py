@@ -19,6 +19,7 @@ def init(
     *,
     num_workers: int = 1,
     num_env_runners: int = 2,
+    max_env_runners: int = 32,
 ) -> bool:
     """Initialise RemoteRL networking.
 
@@ -28,10 +29,12 @@ def init(
         RemoteRL Cloud API key.  May be *None* when using an on-premises.
     role
         Either ``"trainer"`` or ``"simulator"``.
-    num_workers[only trainer parameter]
+    num_workers(only trainer parameter)
         Number of local workers to launch.  Defaults to **1**.
-    num_env_runners[only trainer parameter]
+    num_env_runners(only trainer parameter)
         Number of remote environment-runner processes to launch.  Defaults to **2**.
+    max_env_runners(only simulator parameter)
+        Maximum number of environment-runner processes to launch.  Defaults to **32** for simulators
 
     Raises
     ------

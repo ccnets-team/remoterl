@@ -8,12 +8,42 @@ library functions and to handle optional or union types from function signatures
 """
 from __future__ import annotations
 
+import itertools
 import inspect
-from typing import Any, Dict, Union, get_origin, get_args
+from typing import Any, Dict, Union, List, get_origin, get_args
 
 # -----------------------------------------------------------------------------
 # ─────────────────────────── 1. Utility helpers ──────────────────────────────
 # -----------------------------------------------------------------------------
+
+def parse_cli_tail(tokens: List[str]) -> Dict[str, Any]:
+    """Convert a raw token list (as passed by *Typer*'s ``ctx.args``) into a dict."""
+    out: Dict[str, Any] = {}
+    extra_positional: List[str] = []
+
+    it = iter(tokens)
+    first = next(it, None)
+    if first is not None:
+        if first.startswith("--"):
+            # First token is already a flag → rewind
+            it = itertools.chain([first], it)
+    for tok in it:
+        if tok.startswith("--"):
+            key = tok.lstrip("-").lower().replace("-", "_")
+            val = next(it, True)  # lone switch → True
+            if isinstance(val, str) and val.startswith("--"):
+                # The flag was a boolean switch; rewind
+                out[key] = True
+                it = itertools.chain([val], it)
+            else:
+                out[key] = val
+        else:
+            extra_positional.append(tok)
+    if extra_positional:
+        out["extra_positional"] = extra_positional
+    return out
+
+
 def _canonical(anno):
     """Determine the runtime type to cast to from a type annotation.
 

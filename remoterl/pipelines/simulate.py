@@ -24,25 +24,49 @@ From that point, any remote trainer using the same API key can request environme
 which this process will handle internally. Use Ctrl+C to terminate the simulator when done.
 """
 from __future__ import annotations
-import sys, typer
+import typer
+from typing import List, Dict, Any
+from .helpers import parse_cli_tail
 import remoterl   # pip install remoterl
 from remoterl.config import resolve_api_key
+
+def simulate(params: List[str] | Dict[str, Any] | None = None) -> None:
+    """Dispatch to the selected *RL framework* with the parsed configuration."""
+    # ------------------------------------------------------------------
+    # Parameter normalisation
+    # ------------------------------------------------------------------
+    if params is None:
+        params = {}
+    if isinstance(params, list):  # raw CLI tail → parse
+        params = parse_cli_tail(params)
+    if not isinstance(params, dict):
+        typer.secho("*params* must be a dict or list of tokens.", fg="red", bold=True)
+        raise typer.Exit(code=1)
     
-def simulate(*args, **kwargs) -> None:
+    max_env_runners = params.get("max_env_runners", 32) 
+    
     api_key = resolve_api_key()
     if not api_key:
-        sys.exit(
-            "No RemoteRL API key found.\n"
-            "Set REMOTERL_API_KEY or run `remoterl register` first."
+        typer.secho(
+            "Error: No RemoteRL API key found.\n"
+            "Set the REMOTERL_API_KEY env var or run `remoterl register` first.",
+            fg=typer.colors.RED,
+            err=True,
         )
-    typer.echo(f"**RemoteRL Simulator Started with API Key:** {api_key[:8]}... (resolved)\n")
+        raise typer.Exit(code=1)
+
+    typer.echo(f"**RemoteRL Simulator Started** (API key: {api_key[:8]}...)\n")
 
     try:
-        remoterl.init(api_key, role="simulator")  # blocks until Ctrl-C
+        remoterl.init(
+            api_key,
+            role="simulator",
+            max_env_runners=max_env_runners,
+        )
     except KeyboardInterrupt:
-        # graceful shutdown already handled by remoterl; just exit
         typer.echo("Simulation aborted by user.", err=True)
-        raise SystemExit(1)
+        raise typer.Exit(code=1)
+
 
 # input *args, **kwargs to allow for future extensions
 if __name__ == "__main__":

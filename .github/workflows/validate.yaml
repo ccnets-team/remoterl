@@ -15,15 +15,15 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            python-version: "3.11"
+            python-version: "3.12"
             api_secret: REMOTERL_API_KEY_UBUNTU
 
           - os: windows-latest
-            python-version: "3.11"
+            python-version: "3.12"
             api_secret: REMOTERL_API_KEY_WINDOWS
 
           - os: macos-latest
-            python-version: "3.11"
+            python-version: "3.12"
             api_secret: REMOTERL_API_KEY_MACOS
 
     timeout-minutes: 30
